@@ -30,15 +30,28 @@ namecol <- names(ANALITIC)
 
 namecol1 <- gsub("X..", "Porc", namecol)
 # Reemplaza múltiples puntos con uno solo
+# IMPORTANTE!! SI NO SE TIENE LA LIBRERIA STRINGR NO FUNCIONARÁ
 namecol1 <- str_replace_all(namecol1, "\\.{2,}", ".")
 # Elimina el punto final si lo hay
 namecol1 <- str_replace_all(namecol1, "\\.$", "")
 
-# print("---------------------LIMPIEZA DE COLUMNAS--------------------------------")
-# #
+print("---------------------LIMPIEZA DE COLUMNAS--------------------------------")
+#
 # print(namecol1)
 
 colnames(ANALITIC) <- namecol1
+
+### ===> CONVERSIÓN A NUMERIC DE LA COLUMNAS (ES DECIR) CORRECCION DE LA TIPOLOGIA A LA CORRECTA
+
+columnas_numericas <- c(1, 5, 11:ncol(ANALITIC))
+suppressWarnings({
+  ANALITIC[, columnas_numericas] <- apply(ANALITIC[, columnas_numericas], 2, function(x) as.numeric(as.character(x)))
+})## Para quitar los warnings por valores nulos
+
+columnas_fechas <- c(6, 9, 10)
+suppressWarnings({
+  ANALITIC[, columnas_fechas] <- apply(ANALITIC[, columnas_fechas], 2, function(x) as.Date(as.character(x)))
+})## Para quitar los warnings por valores nulos
 
 #===========================Estado Columnas=================================
 print("---------------------Estado Columnas--------------------------------")
@@ -56,34 +69,70 @@ ncolumnas <- nrow(ANALITIC)
 # print(paste("El numero de filas es de:", ncolumnas))
 #nulos_por_columna[columnas_con_nulos]
 
-# Imprime las columnas con valores nulos, la cantidad de valores nulos y el porcentaje
+null50 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >= 50)
+null90 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >= 90)
 
+# --> # Imprime las columnas con valores nulos, la cantidad de valores nulos y el porcentaje
+# print(paste("El numero de columnas con totales es de: ", length(ANALITIC), "La cantidad de columnas con valores nulos es: ", length(columnas_con_nulos)))
+# print(paste("Cantidad de columnas con el 50% o mas de valores nulos: ", length(null50), "Columnas el 90% o mas de los valores nulos: ", length(null90)))
 # print(paste("Columna", names(columnas_con_nulos), "; Nulos =", nulos_por_columna[columnas_con_nulos], "; Porcentaje = ", (nulos_por_columna[columnas_con_nulos]/ncolumnas)*100))
 
-#Se pueden observar que hay columnas con más del 90% de los datos vacios, posiblemente estos se puedan eliminar
-# dado que es probable que estos no aporten nada a al analisis. Por si acaso por el momento no se eliminan pero son canditatos a ser borrados.
-# Se precisaría de un análisis de correlación para ver como influyen estos parámetros realmente.
+## ggplot2 !!!!!!!!!!
+
+# Crear un dataframe con la información
+datos_grafico <- data.frame(
+  Columna = names(nulos_por_columna),
+  Nulos = nulos_por_columna,
+  Porcentaje = as.numeric((nulos_por_columna/ncolumnas)*100)
+)
+
+# Gráfico de barras para la cantidad de valores nulos
+grafico_barras <- ggplot(datos_grafico, aes(x = Columna, y = Nulos)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Cantidad de Valores Nulos por Columna", x = "Columna", y = "Numero de Nulos") +
+  theme_minimal()
+
+# Gráfico de líneas para el porcentaje de valores nulos
+grafico_lineas <- ggplot(datos_grafico, aes(x = Columna, y = Porcentaje)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Porcentaje de Valores Nulos por Columna", x = "Columna", y = "Porcentaje") +
+  theme_minimal()
+
+# # Mostrar ambos gráficos
+print(grafico_barras)
+print(grafico_lineas)
+
+# ===> #  Se pueden observar que hay columnas con más del 90% de los datos vacios, posiblemente estos se puedan eliminar
+        # dado que es probable que estos no aporten nada a al analisis. Por si acaso por el momento no se eliminan pero son canditatos a ser borrados.
+        # Se precisaría de un análisis de correlación para ver como influyen estos parámetros realmente.
+        # Ademas se observa que todas menos diez de las columnas tienen valores nulos, la mayoria superando el 50%
 
 #===========================Filtrado glomerular estimado=================================
 print("---------------------Filtrado glomerular estimado--------------------------------")
 
 # Crear una nueva columna "FGE" con valores predeterminados
 ANALITIC$FGE <- 0
+ANALITIC$Creatinina <- as.numeric(ANALITIC$Creatinina) ##SUELTA UN WARNING por convertir a numero un valor nulo
 
-ANALITIC$Creatinina <- as.numeric(ANALITIC$Creatinina)
-
-!is.na(ANALITIC$Creatinina)
+# !is.na(ANALITIC$Creatinina) ## Imprime que valores de Creatinina son nulos (sin el no se puede hacer la formula) SI HAY VALORES NULOS
 
 # Aplicar la condición usando ifelse para las MUJERES
-ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "M" & !is.na(ANALITIC$Creatinina),
+ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "M",
                        (141 * pmin(ANALITIC$Creatinina / 0.7, 1)^(-0.329) * pmax(ANALITIC$Creatinina / 0.7, 1)^(-1.209) * 0.993^(ANALITIC$Edad) * 1.018),
                        ANALITIC$FGE)
 
 # Aplicar la condición usando ifelse para las HOMBRES
-ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "H" & !is.na(ANALITIC$Creatinina),
+ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "H",
                        (141 * pmin(ANALITIC$Creatinina / 0.9, 1)^(-0.411) * pmax(ANALITIC$Creatinina / 0.9, 1)^(-1.209) * 0.993^(ANALITIC$Edad) * 1.018),
                        ANALITIC$FGE)
 
-ANALITIC$FGE
+print(ANALITIC[is.na(ANALITIC$FGE) & !(is.na(ANALITIC$Creatinina)), c("ID", "Creatinina", "FGE")])
 
-##Da la impresión que se rellenan aquellos con Creatinina --> buscar si para el resto hay otro valor o algo o si no usar el de la columna FG que hay en informes??
+# ===> # Da la casualidad de que cuando se crea la columna para el FGE se observa que hay 13 nulos de mas con respecto a la Creatinina, posiblemente porque hay
+        # valores de la misma a "-9999999" que producen un valor nulo seguramente en la operación. ¿Que significa la Creatinina a "-9999999"
+
+# ANALITIC$FGE  ## Imprime la nueva columna con los resultados del filtrado glomerular estimado
+
+# ==== >#Da la impresión que se rellenan aquellos con Creatinina --> buscar si para el resto hay otro valor o algo o si no usar el de la columna FG que hay en informes??
+
+
