@@ -34,6 +34,8 @@ namecol1 <- gsub("X..", "Porc", namecol)
 namecol1 <- str_replace_all(namecol1, "\\.{2,}", ".")
 # Elimina el punto final si lo hay
 namecol1 <- str_replace_all(namecol1, "\\.$", "")
+# Quitar las tildes y las ñ (por n) para eliminar problemas al llamar a las columnas
+namecol1 <- iconv(namecol1, "UTF-8", "ASCII//TRANSLIT")
 
 print("---------------------LIMPIEZA DE COLUMNAS--------------------------------")
 #
@@ -99,8 +101,8 @@ grafico_lineas <- ggplot(datos_grafico, aes(x = Columna, y = Porcentaje)) +
   theme_minimal()
 
 # # Mostrar ambos gráficos
-print(grafico_barras)
-print(grafico_lineas)
+# print(grafico_barras)
+# print(grafico_lineas)
 
 # ===> #  Se pueden observar que hay columnas con más del 90% de los datos vacios, posiblemente estos se puedan eliminar
         # dado que es probable que estos no aporten nada a al analisis. Por si acaso por el momento no se eliminan pero son canditatos a ser borrados.
@@ -126,7 +128,8 @@ ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "H",
                        (141 * pmin(ANALITIC$Creatinina / 0.9, 1)^(-0.411) * pmax(ANALITIC$Creatinina / 0.9, 1)^(-1.209) * 0.993^(ANALITIC$Edad) * 1.018),
                        ANALITIC$FGE)
 
-print(ANALITIC[is.na(ANALITIC$FGE) & !(is.na(ANALITIC$Creatinina)), c("ID", "Creatinina", "FGE")])
+#Imprime los valores de que son nulos en FGE y no en Creatinina (que es el unico facto que puede producir nulos (dado que en edad no hay nulos))
+# print(ANALITIC[is.na(ANALITIC$FGE) & !(is.na(ANALITIC$Creatinina)), c("ID", "Creatinina", "FGE")])
 
 # ===> # Da la casualidad de que cuando se crea la columna para el FGE se observa que hay 13 nulos de mas con respecto a la Creatinina, posiblemente porque hay
         # valores de la misma a "-9999999" que producen un valor nulo seguramente en la operación. ¿Que significa la Creatinina a "-9999999"
@@ -135,4 +138,42 @@ print(ANALITIC[is.na(ANALITIC$FGE) & !(is.na(ANALITIC$Creatinina)), c("ID", "Cre
 
 # ==== >#Da la impresión que se rellenan aquellos con Creatinina --> buscar si para el resto hay otro valor o algo o si no usar el de la columna FG que hay en informes??
 
+#===========================Cociente albuminuria/creatinina en orina=================================
+print("---------------------Cociente albuminuria/creatinina en orina--------------------------------")
 
+#Visualizamos como estan los datos necesarios a usar
+# print(paste("El numero de valores de Albuminaria: ", length(ANALITIC$Albumina), " de los cuales nulos son: ", sum(is.na(ANALITIC$Albumina))))
+# print(paste("El numero de valores de Creatinina en orina: ", length(ANALITIC$Creatinina.orina), " de los cuales nulos son: ", sum(is.na(ANALITIC$Creatinina.orina))))
+
+# ==> # No hay mucho donde tirar con este cociente dado que hay gran cantidad de nulos entre ambos, pero lo crearemos igualemente por si aporta información a futuro
+      # Aunque parece que ya existe un cociente usando la microalbuminaria, por si las moscas creamos este
+      # Es ese valor de ANALITIC$Cociente.Microalbuminaria.Creatinina el que nos mencionan??
+
+ANALITIC$Cociente.Album.Creat <- 0
+
+ANALITIC$Cociente.Album.Creat <- ifelse(!(is.na(ANALITIC$Albumina)) & !(is.na(ANALITIC$Creatinina.orina)),
+                       (ANALITIC$Albumina / ANALITIC$Creatinina.orina),
+                       ANALITIC$Cociente.Album.Creat)
+
+#NO SE COMO SACAR LAS GRAFICAS POR PACIENTES PARA VER UN POCO LAS EVOLUCIONES CON ESE COCIENTE
+#PERO NO HAY MANERA
+
+# # Filtrar datos para IDs con más de 3 valores de cociente disponibles
+# datos_filtrados <- ANALITIC %>%
+#   group_by(ID) %>%
+#   filter(sum(!is.na(Cociente.Album.Creat) & Cociente.Album.Creat != 0) > 3) %>%
+#   ungroup()
+#
+# datos_filtrados$ID <- factor(datos_filtrados$ID)
+#
+# # Y los ordenamos segun el ID y la fecha de toma
+# datos <- datos_filtrados[order(ANALITIC$ID, ANALITIC$fechatoma), ]
+#
+# # Crear gráfico de líneas por paciente
+# CocienteXPaciente <- ggplot(datos, aes(x = fechatoma, y = Cociente.Album.Creat, group = ID, color = ID)) +
+#   geom_line() +
+#   labs(x = 'Fecha Toma', y = 'Cociente') +
+#   theme_minimal() +
+#   facet_wrap(~ID, scales = 'free_y')
+#
+# print(CocienteXPaciente)
