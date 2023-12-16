@@ -5,6 +5,10 @@
 # Para el portatil
 ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
+library(tidyverse)
+library(dbplyr)
+library(ggplot2)
+
 # summary(ANALITIC)
 
 # - Creatinina sérica (a más alto, peor evolución)  --> Creatinina
@@ -130,6 +134,9 @@ ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "H",
 
 #Imprime los valores de que son nulos en FGE y no en Creatinina (que es el unico facto que puede producir nulos (dado que en edad no hay nulos))
 # print(ANALITIC[is.na(ANALITIC$FGE) & !(is.na(ANALITIC$Creatinina)), c("ID", "Creatinina", "FGE")])
+NullFGE <- sum(is.na(ANALITIC$FGE))
+ZeroFGE <- sum(ANALITIC$FGE == 0)
+print(paste("Valores nulos de FGE: ", NullFGE, " Cantidad de valores a 0 en FGE: ", ZeroFGE))
 
 # ===> # Da la casualidad de que cuando se crea la columna para el FGE se observa que hay 13 nulos de mas con respecto a la Creatinina, posiblemente porque hay
         # valores de la misma a "-9999999" que producen un valor nulo seguramente en la operación. ¿Que significa la Creatinina a "-9999999"
@@ -154,6 +161,45 @@ ANALITIC$Cociente.Album.Creat <- 0
 ANALITIC$Cociente.Album.Creat <- ifelse(!(is.na(ANALITIC$Albumina)) & !(is.na(ANALITIC$Creatinina.orina)),
                        (ANALITIC$Albumina / ANALITIC$Creatinina.orina),
                        ANALITIC$Cociente.Album.Creat)
+
+# NullCC <- sum(is.na(ANALITIC$Cociente.Album.Creat))
+# ZeroCC <- sum(ANALITIC$Cociente.Album.Creat == 0)
+# print(paste("Valores nulos del Cociente de albuminuria: ", NullCC, " Cantidad de valores a 0 en el Cociente de albuminaria: ", ZeroCC))
+
+ANALITIC$Cociente.Album.Creat <- ifelse(ANALITIC$Cociente.Album.Creat == 0, NA, ANALITIC$Cociente.Album.Creat)
+
+NullCC <- sum(is.na(ANALITIC$Cociente.Album.Creat))
+ZeroCC <- sum(ANALITIC$Cociente.Album.Creat == 0)
+print(paste("Valores nulos del Cociente de albuminuria: ", NullCC, " Cantidad de valores a 0 en el Cociente de albuminaria: ", ZeroCC))
+
+NullFGECC <- sum(is.na(ANALITIC$FGE) & is.na(ANALITIC$Cociente.Album.Creat))
+print(paste("Cantidad en la que ambos son nulos, tanto FGE con el Cociente de albuminuria: ", NullFGECC))
+
+#===========================POR PACIENTE=================================
+print("---------------------Por paciente--------------------------------")
+
+ANALITIC <- ANALITIC %>% arrange(ID, fechatoma)
+
+pacientes_filtrados <- ANALITIC %>%
+  group_by(ID) %>%
+  filter(sum(!is.na(FGE)) > 7) %>%
+  ungroup()
+
+paciente_seleccionado <- pacientes_filtrados$ID[1]
+
+# Filtrar el dataframe solo para el paciente seleccionado
+datos_paciente <- pacientes_filtrados %>%
+  filter(ID == paciente_seleccionado)
+
+# Crear un gráfico de líneas para el paciente seleccionado
+grafico <- ggplot(datos_paciente, aes(x = fechatoma, y = FGE)) +
+  geom_line() +
+  labs(title = paste("Grafico de FGE para el paciente", paciente_seleccionado),
+       x = "Fecha_Toma",
+       y = "FGE")
+
+# Imprimir el gráfico
+print(grafico)
 
 #NO SE COMO SACAR LAS GRAFICAS POR PACIENTES PARA VER UN POCO LAS EVOLUCIONES CON ESE COCIENTE
 #PERO NO HAY MANERA
