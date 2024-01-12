@@ -1,12 +1,12 @@
 
 # Para la torre
-#ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 # Para el portatil
-ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+# ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 library(tidyverse)
-library(dbplyr)
+library(dplyr)
 library(ggplot2)
 
 # summary(ANALITIC)
@@ -105,8 +105,8 @@ grafico_lineas <- ggplot(datos_grafico, aes(x = Columna, y = Porcentaje)) +
   theme_minimal()
 
 # # Mostrar ambos gráficos
-# print(grafico_barras)
-# print(grafico_lineas)
+print(grafico_barras)
+print(grafico_lineas)
 
 # ===> #  Se pueden observar que hay columnas con más del 90% de los datos vacios, posiblemente estos se puedan eliminar
         # dado que es probable que estos no aporten nada a al analisis. Por si acaso por el momento no se eliminan pero son canditatos a ser borrados.
@@ -191,15 +191,15 @@ paciente_seleccionado <- pacientes_filtrados$ID[1]
 datos_paciente <- pacientes_filtrados %>%
   filter(ID == paciente_seleccionado)
 
-# Crear un gráfico de líneas para el paciente seleccionado
-grafico <- ggplot(datos_paciente, aes(x = fechatoma, y = FGE)) +
-  geom_line() +
-  labs(title = paste("Grafico de FGE para el paciente", paciente_seleccionado),
-       x = "Fecha_Toma",
-       y = "FGE")
-
-# Imprimir el gráfico
-print(grafico)
+# # Crear un gráfico de líneas para el paciente seleccionado
+# grafico <- ggplot(datos_paciente, aes(x = fechatoma, y = FGE)) +
+#   geom_line() +
+#   labs(title = paste("Grafico de FGE para el paciente", paciente_seleccionado),
+#        x = "Fecha_Toma",
+#        y = "FGE")
+#
+# # Imprimir el gráfico
+# print(grafico)
 
 #NO SE COMO SACAR LAS GRAFICAS POR PACIENTES PARA VER UN POCO LAS EVOLUCIONES CON ESE COCIENTE
 #PERO NO HAY MANERA
@@ -223,3 +223,77 @@ print(grafico)
 #   facet_wrap(~ID, scales = 'free_y')
 #
 # print(CocienteXPaciente)
+
+# write.csv(ANALITIC, "ANALITIC_LIMPIO1.csv", row.names = FALSE)
+
+
+#=========================== QUITAR COSAS =================================
+print("---------------------Quitamos ID's--------------------------------")
+
+datos_filtrados <- ANALITIC %>%
+  group_by(ID) %>%
+  filter(any(!is.na(FGE)) | any(!is.na(Cociente.Album.Creat)))
+
+# Ver el tamaño del conjunto de datos original y del filtrado
+cat("Tamaño original:", nrow(ANALITIC), "\n")
+cat("Tamaño filtrado:", nrow(datos_filtrados), "\n")
+
+# Seleccionar solo la columna 'ID'
+ids <- datos_filtrados %>% select(ID)
+
+# Exportar la columna 'ID' a un archivo CSV
+# write.csv(ids, "ids.csv", row.names = FALSE)
+
+#=========================== EDA =================================
+print("--------------------- EDA --------------------------------")
+
+# Examinar estadísticas básicas de algunas columnas clínicas clave
+# Empezando con la edad
+edad_stats <- summary(ANALITIC$Edad)
+
+# Revisar también estadísticas para otras variables clínicas importantes
+# Suponiendo que estas columnas existen en el conjunto de datos, ajusta según tus columnas
+variables_clinicas <- c('Creatinina', 'FGE', 'Cociente.Album.Creat')  # Ejemplos de columnas
+clinicas_stats <- summary(ANALITIC[variables_clinicas])
+
+list(edad_stats, clinicas_stats)
+
+
+
+# Filtrar la columna 'Creatinina' para excluir valores extremos
+creatinina_filtrada <- ANALITIC %>% filter(Creatinina >= 0.5, Creatinina <= 20) %>% pull(Creatinina)
+
+# Crear un gráfico combinado con histograma y boxplot
+par(mfrow = c(1, 2))
+
+# Histograma
+HIST_Creatinina <- hist(creatinina_filtrada, main="Histograma de Creatinina (Filtrado)", xlab="Creatinina", ylab="Frecuencia", col="lightblue", border="black")
+
+print(HIST_Creatinina)
+
+# Boxplot
+BOX_Creatinina <- boxplot(creatinina_filtrada, horizontal=TRUE, main="Boxplot de Creatinina (Filtrado)", xlab="Creatinina")
+
+print(BOX_Creatinina)
+
+# Restaurar configuración gráfica
+par(mfrow = c(1, 1))
+
+
+
+
+# Filtrar los datos para excluir valores extremadamente atípicos en 'FGE'
+datos_filtrados <- ANALITIC %>% filter(FGE >= 0 & FGE <= 150)
+
+# Histograma y Boxplot para 'FGE'
+par(mfrow = c(1, 2))
+
+# Histograma
+HIST_FGE <- hist(datos_filtrados$FGE, main = "Histograma de FGE (Filtrado)", xlab = "FGE")
+
+print(HIST_FGE)
+
+# Boxplot
+BOX_FGE <- boxplot(datos_filtrados$FGE, main = "Boxplot de FGE (Filtrado)", ylab = "FGE")
+
+print(BOX_FGE)
