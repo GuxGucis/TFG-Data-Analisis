@@ -41,7 +41,7 @@ namecol1 <- str_replace_all(namecol1, "\\.$", "")
 # Quitar las tildes y las ñ (por n) para eliminar problemas al llamar a las columnas
 namecol1 <- iconv(namecol1, "UTF-8", "ASCII//TRANSLIT")
 
-print("---------------------LIMPIEZA DE COLUMNAS--------------------------------")
+print("--------------------- LIMPIEZA DE COLUMNAS --------------------------------")
 #
 # print(namecol1)
 
@@ -60,7 +60,7 @@ suppressWarnings({
 })## Para quitar los warnings por valores nulos
 
 #===========================Estado Columnas=================================
-print("---------------------Estado Columnas--------------------------------")
+print("--------------------- Estado Columnas --------------------------------")
 
 nulos_por_columna <- colSums(is.na(ANALITIC))
 
@@ -79,8 +79,8 @@ null50 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >
 null90 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >= 90)
 
 # --> # Imprime las columnas con valores nulos, la cantidad de valores nulos y el porcentaje
-# print(paste("El numero de columnas con totales es de: ", length(ANALITIC), "La cantidad de columnas con valores nulos es: ", length(columnas_con_nulos)))
-# print(paste("Cantidad de columnas con el 50% o mas de valores nulos: ", length(null50), "Columnas el 90% o mas de los valores nulos: ", length(null90)))
+print(paste("El numero de columnas con totales es de: ", length(ANALITIC), "La cantidad de columnas con valores nulos es: ", length(columnas_con_nulos)))
+print(paste("Cantidad de columnas con el 50% o mas de valores nulos: ", length(null50), "Columnas el 90% o mas de los valores nulos: ", length(null90)))
 # print(paste("Columna", names(columnas_con_nulos), "; Nulos =", nulos_por_columna[columnas_con_nulos], "; Porcentaje = ", (nulos_por_columna[columnas_con_nulos]/ncolumnas)*100))
 
 ## ggplot2 !!!!!!!!!!
@@ -114,7 +114,7 @@ print(grafico_lineas)
         # Ademas se observa que todas menos diez de las columnas tienen valores nulos, la mayoria superando el 50%
 
 #===========================Filtrado glomerular estimado=================================
-print("---------------------Filtrado glomerular estimado--------------------------------")
+print("--------------------- Filtrado glomerular estimado --------------------------------")
 
 # Crear una nueva columna "FGE" con valores predeterminados
 ANALITIC$FGE <- 0
@@ -146,7 +146,7 @@ print(paste("Valores nulos de FGE: ", NullFGE, " Cantidad de valores a 0 en FGE:
 # ==== >#Da la impresión que se rellenan aquellos con Creatinina --> buscar si para el resto hay otro valor o algo o si no usar el de la columna FG que hay en informes??
 
 #===========================Cociente albuminuria/creatinina en orina=================================
-print("---------------------Cociente albuminuria/creatinina en orina--------------------------------")
+print("--------------------- Cociente albuminuria/creatinina en orina --------------------------------")
 
 #Visualizamos como estan los datos necesarios a usar
 # print(paste("El numero de valores de Albuminaria: ", length(ANALITIC$Albumina), " de los cuales nulos son: ", sum(is.na(ANALITIC$Albumina))))
@@ -175,90 +175,57 @@ print(paste("Valores nulos del Cociente de albuminuria: ", NullCC, " Cantidad de
 NullFGECC <- sum(is.na(ANALITIC$FGE) & is.na(ANALITIC$Cociente.Album.Creat))
 print(paste("Cantidad en la que ambos son nulos, tanto FGE con el Cociente de albuminuria: ", NullFGECC))
 
-#===========================POR PACIENTE=================================
-print("---------------------Por paciente--------------------------------")
-
-ANALITIC <- ANALITIC %>% arrange(ID, fechatoma)
-
-pacientes_filtrados <- ANALITIC %>%
-  group_by(ID) %>%
-  filter(sum(!is.na(FGE)) > 7) %>%
-  ungroup()
-
-paciente_seleccionado <- pacientes_filtrados$ID[1]
-
-# Filtrar el dataframe solo para el paciente seleccionado
-datos_paciente <- pacientes_filtrados %>%
-  filter(ID == paciente_seleccionado)
-
-# # Crear un gráfico de líneas para el paciente seleccionado
-# grafico <- ggplot(datos_paciente, aes(x = fechatoma, y = FGE)) +
-#   geom_line() +
-#   labs(title = paste("Grafico de FGE para el paciente", paciente_seleccionado),
-#        x = "Fecha_Toma",
-#        y = "FGE")
-#
-# # Imprimir el gráfico
-# print(grafico)
-
-#NO SE COMO SACAR LAS GRAFICAS POR PACIENTES PARA VER UN POCO LAS EVOLUCIONES CON ESE COCIENTE
-#PERO NO HAY MANERA
-
-# # Filtrar datos para IDs con más de 3 valores de cociente disponibles
-# datos_filtrados <- ANALITIC %>%
-#   group_by(ID) %>%
-#   filter(sum(!is.na(Cociente.Album.Creat) & Cociente.Album.Creat != 0) > 3) %>%
-#   ungroup()
-#
-# datos_filtrados$ID <- factor(datos_filtrados$ID)
-#
-# # Y los ordenamos segun el ID y la fecha de toma
-# datos <- datos_filtrados[order(ANALITIC$ID, ANALITIC$fechatoma), ]
-#
-# # Crear gráfico de líneas por paciente
-# CocienteXPaciente <- ggplot(datos, aes(x = fechatoma, y = Cociente.Album.Creat, group = ID, color = ID)) +
-#   geom_line() +
-#   labs(x = 'Fecha Toma', y = 'Cociente') +
-#   theme_minimal() +
-#   facet_wrap(~ID, scales = 'free_y')
-#
-# print(CocienteXPaciente)
-
-# write.csv(ANALITIC, "ANALITIC_LIMPIO1.csv", row.names = FALSE)
-
-
 #=========================== QUITAR COSAS =================================
-print("---------------------Quitamos ID's--------------------------------")
+print("--------------------- Quitamos FGE y Cociente nulos --------------------------------")
 
-datos_filtrados <- ANALITIC %>%
-  group_by(ID) %>%
-  filter(any(!is.na(FGE)) | any(!is.na(Cociente.Album.Creat)))
+cat("Número de filas que tiene tanto el FGE como el Cociente nulos: ", sum(is.na(ANALITIC$Cociente.Album.Creat) & is.na(ANALITIC$FGE)), "\n")
+cat("Tamaño original de Analitics: ", nrow(ANALITIC), "\n")
+# Vemos que hay filas que tienen ambos valores nulos, por que procedemos a quitarlos (sin ninguno de los dos no hacemos mucho
 
-# Ver el tamaño del conjunto de datos original y del filtrado
-cat("Tamaño original:", nrow(ANALITIC), "\n")
-cat("Tamaño filtrado:", nrow(datos_filtrados), "\n")
+ANALITIC <- ANALITIC %>%
+  filter(!(is.na(ANALITIC$Cociente.Album.Creat) & is.na(ANALITIC$FGE)))
 
-# Seleccionar solo la columna 'ID'
-ids <- datos_filtrados %>% select(ID)
+cat("Tamaño tras el filtrado: ", nrow(ANALITIC), "\n")
 
-# Exportar la columna 'ID' a un archivo CSV
-# write.csv(ids, "ids.csv", row.names = FALSE)
+
+print("--------------------- Quitamos ID's que no coincidan con la otra pagina --------------------------------")
+
+# Leer los ID's del archivo de texto
+ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
+
+# Convertir a numérico si los ID's son numéricos
+ids_texto <- as.numeric(ids_texto)
+cat("Numero de Ids Coincidentes: ", length(ids_texto), "\n")
+cat("Numero de Ids distintos en el dataframe: ", length(unique(ANALITIC$ID)), "\n")
+# Claramente hay Id's que no estan en la otra hoja, por lo que eliminamos estos id's para que coincidan con la otra tabla de datos
+
+ANALITIC <- ANALITIC[ANALITIC$ID %in% ids_texto, ]
+cat("Numero de Ids distintos en el dataframe(tras el filtrado): ", length(unique(ANALITIC$ID)), "\n")
+
+print("--------------------- Columnas (casi) Vacias --------------------------------")
+# Se checkeo antes el estado
+# En principio nos vamos a centrar en aquellos que tengan el 90% vacio (veremos si nos lo quedamos)
+
+# Calcular el porcentaje de datos nulos por columna
+porcentaje_nulos <- sapply(ANALITIC, function(columna) sum(is.na(columna)) / nrow(ANALITIC))
+
+# Identificar las columnas con al menos el 90% de datos nulos
+columnas_mayor90_nulos <- names(porcentaje_nulos[porcentaje_nulos >= 0.9])
+
+# Imprimir los nombres de estas columnas
+print(columnas_mayor90_nulos)
 
 #=========================== EDA =================================
 print("--------------------- EDA --------------------------------")
 
 # Examinar estadísticas básicas de algunas columnas clínicas clave
 # Empezando con la edad
-edad_stats <- summary(ANALITIC$Edad)
+# ------------> summary(ANALITIC$Edad)
 
 # Revisar también estadísticas para otras variables clínicas importantes
 # Suponiendo que estas columnas existen en el conjunto de datos, ajusta según tus columnas
 variables_clinicas <- c('Creatinina', 'FGE', 'Cociente.Album.Creat')  # Ejemplos de columnas
-clinicas_stats <- summary(ANALITIC[variables_clinicas])
-
-list(edad_stats, clinicas_stats)
-
-
+# ------------> summary(ANALITIC[variables_clinicas])
 
 # Filtrar la columna 'Creatinina' para excluir valores extremos
 creatinina_filtrada <- ANALITIC %>% filter(Creatinina >= 0.5, Creatinina <= 20) %>% pull(Creatinina)
@@ -267,20 +234,13 @@ creatinina_filtrada <- ANALITIC %>% filter(Creatinina >= 0.5, Creatinina <= 20) 
 par(mfrow = c(1, 2))
 
 # Histograma
-HIST_Creatinina <- hist(creatinina_filtrada, main="Histograma de Creatinina (Filtrado)", xlab="Creatinina", ylab="Frecuencia", col="lightblue", border="black")
-
-print(HIST_Creatinina)
+hist(creatinina_filtrada, main="Histograma de Creatinina (Filtrado)", xlab="Creatinina", ylab="Frecuencia", col="lightblue", border="black")
 
 # Boxplot
-BOX_Creatinina <- boxplot(creatinina_filtrada, horizontal=TRUE, main="Boxplot de Creatinina (Filtrado)", xlab="Creatinina")
-
-print(BOX_Creatinina)
+boxplot(creatinina_filtrada, horizontal=TRUE, main="Boxplot de Creatinina (Filtrado)", xlab="Creatinina")
 
 # Restaurar configuración gráfica
 par(mfrow = c(1, 1))
-
-
-
 
 # Filtrar los datos para excluir valores extremadamente atípicos en 'FGE'
 datos_filtrados <- ANALITIC %>% filter(FGE >= 0 & FGE <= 150)
@@ -289,11 +249,7 @@ datos_filtrados <- ANALITIC %>% filter(FGE >= 0 & FGE <= 150)
 par(mfrow = c(1, 2))
 
 # Histograma
-HIST_FGE <- hist(datos_filtrados$FGE, main = "Histograma de FGE (Filtrado)", xlab = "FGE")
-
-print(HIST_FGE)
+hist(datos_filtrados$FGE, main = "Histograma de FGE (Filtrado)", xlab = "FGE")
 
 # Boxplot
-BOX_FGE <- boxplot(datos_filtrados$FGE, main = "Boxplot de FGE (Filtrado)", ylab = "FGE")
-
-print(BOX_FGE)
+boxplot(datos_filtrados$FGE, main = "Boxplot de FGE (Filtrado)", ylab = "FGE")
