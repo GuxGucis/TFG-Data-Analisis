@@ -202,6 +202,18 @@ cat("Numero de Ids distintos en el dataframe: ", length(unique(ANALITIC$ID)), "\
 ANALITIC <- ANALITIC[ANALITIC$ID %in% ids_texto, ]
 cat("Numero de Ids distintos en el dataframe(tras el filtrado): ", length(unique(ANALITIC$ID)), "\n")
 
+print("--------------------- Max y mins --------------------------------")
+
+# Calcular el mínimo de cada columna
+minimos_por_columna <- sapply(ANALITIC, min, na.rm = TRUE)
+
+# Calcular el máximo de cada columna
+maximos_por_columna <- sapply(ANALITIC, max, na.rm = TRUE)
+
+# Imprimir los mínimos y máximos
+print(minimos_por_columna)
+print(maximos_por_columna)
+
 print("--------------------- Columnas (casi) Vacias --------------------------------")
 # Se checkeo antes el estado
 # En principio nos vamos a centrar en aquellos que tengan el 90% vacio (veremos si nos lo quedamos)
@@ -210,10 +222,21 @@ print("--------------------- Columnas (casi) Vacias ----------------------------
 porcentaje_nulos <- sapply(ANALITIC, function(columna) sum(is.na(columna)) / nrow(ANALITIC))
 
 # Identificar las columnas con al menos el 90% de datos nulos
-columnas_mayor90_nulos <- names(porcentaje_nulos[porcentaje_nulos >= 0.9])
+columnas_mayor90_nulos <- names(porcentaje_nulos[porcentaje_nulos >= 0.95])
 
 # Imprimir los nombres de estas columnas
 print(columnas_mayor90_nulos)
+
+# Obtener los índices (números) de las columnas con más del 90% de datos nulos
+# indices_columnas_mayor90_nulos <- which(porcentaje_nulos >= 0.9)
+
+# Imprimir los índices de estas columnas
+# print(indices_columnas_mayor90_nulos)
+
+cantidad_columnas_mayor90_nulos <- sum(porcentaje_nulos >= 0.95)
+
+# Imprimir la cantidad de estas columnas
+cat("Cantidad de columnas con el 95% o mas de datos vacíos",cantidad_columnas_mayor90_nulos)
 
 #=========================== EDA =================================
 print("--------------------- EDA --------------------------------")
@@ -253,3 +276,12 @@ hist(datos_filtrados$FGE, main = "Histograma de FGE (Filtrado)", xlab = "FGE")
 
 # Boxplot
 boxplot(datos_filtrados$FGE, main = "Boxplot de FGE (Filtrado)", ylab = "FGE")
+
+#=========================== Exportar =================================
+print("--------------------- Exportar --------------------------------")
+
+# Selecting only the required columns
+data_to_export <- ANALITIC[, c("ID", "FFECCITA", "fechatoma", "Creatinina", "Creatinina.orina", "Cociente.Album.Creat", "FGE")]
+
+# Exporting to CSV
+write.csv(data_to_export, "D:/gugui/Documentos/Universidad/TFG/ExportedData.csv", row.names = FALSE)
