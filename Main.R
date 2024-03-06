@@ -1,16 +1,17 @@
 # ------------------- CARGADO DE DATOS -------------------
 
 # Para la torre
-ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+# ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 # Para el portatil
-# ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 # ------------------- LIBRERIAS -------------------
 
 library(tidyverse)
 library(dplyr)
 library(ggplot2)
+library(lme4)
 
 # ------------------- CORRECCIÓN DE NOMBRES -------------------
 print('------------------- CORRECCIÓN DE NOMBRES -------------------')
@@ -87,6 +88,42 @@ ANALITIC <- ANALITIC[, -(null90)]
 ncolumn <- ncol(ANALITIC)
 print(paste('Númoro de columnas: ', ncolumn))
 
+# ------------------- CAMBIAR VALORES RAROS A NA (-99999) -------------------
+print('------------------- CAMBIAR VALORES RAROS A NA (-99999) -------------------')
+
+# Lista de valores numéricos que quieres reemplazar por NA
+valores_a_reemplazar <- c(-9999999) # Añade aquí cualquier otro valor que necesites
+
+# Reemplaza los valores en las columnas desde la 11 en adelante
+ANALITIC <- ANALITIC %>%
+  mutate(across(11:ncol(.), ~replace(., . %in% valores_a_reemplazar, NA)))
+
+# ------------------- ATIPICOS -------------------
+print('------------------- ATIPICOS -------------------')
+
+# for(i in 11:ncol(ANALITIC)) {
+#   nombre_columna <- names(ANALITIC)[i]
+#
+#   print(paste("Resumen para la columna:", nombre_columna))
+#   print(summary(ANALITIC[[nombre_columna]]))
+#
+#   # Filtra para excluir valores NA o no finitos en la columna actual
+#   datos_filtrados <- ANALITIC %>% filter(!is.na(.[[nombre_columna]]) & is.finite(.[[nombre_columna]]))
+#
+#   # Verifica que después del filtrado quedan suficientes datos para graficar
+#   if(nrow(datos_filtrados) > 0) {
+#     p <- ggplot(datos_filtrados, aes_string(x = "factor(1)", y = nombre_columna)) +
+#       geom_boxplot() +
+#       labs(title = paste("Boxplot de", nombre_columna), y = nombre_columna, x = "") +
+#       theme_minimal() +
+#       theme(axis.title.x=element_blank(),
+#             axis.text.x=element_blank(),
+#             axis.ticks.x=element_blank())
+#
+#     print(p)
+#   }
+# }
+
 # ------------------- Filtrado glomerular estimado -------------------
 print('------------------- Filtrado glomerular estimado -------------------')
 
@@ -148,7 +185,8 @@ print('------------------- IDs NO COINCIDENTES -------------------')
 #Para los ID's que no coinciden con el otro excel, y por lo tanto, faltan datos de los mismos
 
 # Leer los ID's del archivo de texto
-ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
+# ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
+ids_texto <- readLines("D:/Documentos/Universidad/TFG//IDs.txt")
 
 # Convertir a numérico si los ID's son numéricos
 ids_texto <- as.numeric(ids_texto)
@@ -164,57 +202,68 @@ print('------------------- FGE ANALISIS -------------------')
 
 #               grafica por paciente
 
-#agrupamos por ID y fechatoma para ver la evolución por paciente de este valor
-ANALITIC <- ANALITIC %>%
-  arrange(ID, fechatoma)
-
-#Creamos un bucle para para crear un plot por paciente para ver las evoluciones
-unique_ids <- unique(ANALITIC$ID)
-
-for(patient_id in unique_ids) {
-  patient_data <- ANALITIC[ANALITIC$ID == patient_id & !is.na(ANALITIC$FGE), ]
-
-  #Contamos cuantas tomas hay
-  num_dates <- length(unique(patient_data$fechatoma))
-
-  # Y solo usamos los que tienen 5 o mas (menos parace un poco absurdo para ver la evolución teniendo tantos datos)
-  if(num_dates >= 5) {
-    p <- ggplot(patient_data, aes(x = fechatoma, y = FGE, group = ID)) +
-      geom_line(colour="#000099") +
-      geom_point(colour="#CC0000") +
-      labs(title = paste("Evolution of FGE for Patient", patient_id),
-           x = "Date of Sample (fechatoma)",
-           y = "Filtrado Glomerular Estimado (FGE)") +
-      theme_minimal()
-    # Save the plot
-    ggsave(paste("D:/gugui/Documentos/Universidad/TFG/Evoluciones_FGE/FGE_evolution_patient_", patient_id, ".png", sep = ""), plot = p, width = 10, height = 6)
-  }
-}
+# #agrupamos por ID y fechatoma para ver la evolución por paciente de este valor
+# ANALITIC <- ANALITIC %>%
+#   arrange(ID, fechatoma)
+#
+# #Creamos un bucle para para crear un plot por paciente para ver las evoluciones
+# unique_ids <- unique(ANALITIC$ID)
+#
+# for(patient_id in unique_ids) {
+#   patient_data <- ANALITIC[ANALITIC$ID == patient_id & !is.na(ANALITIC$FGE), ]
+#
+#   #Contamos cuantas tomas hay
+#   num_dates <- length(unique(patient_data$fechatoma))
+#
+#   # Y solo usamos los que tienen 5 o mas (menos parace un poco absurdo para ver la evolución teniendo tantos datos)
+#   if(num_dates >= 5) {
+#     p <- ggplot(patient_data, aes(x = fechatoma, y = FGE, group = ID)) +
+#       geom_line(colour="#000099") +
+#       geom_point(colour="#CC0000") +
+#       labs(title = paste("Evolution of FGE for Patient", patient_id),
+#            x = "Date of Sample (fechatoma)",
+#            y = "Filtrado Glomerular Estimado (FGE)") +
+#       theme_minimal()
+#     # Save the plot
+#     ggsave(paste("D:/gugui/Documentos/Universidad/TFG/Evoluciones_FGE/FGE_evolution_patient_", patient_id, ".png", sep = ""), plot = p, width = 10, height = 6)
+#   }
+# }
 
 #                 grafica conjunta
 
-# Preparamos la información y cogemos (como antes) solo aquellos que tengas al menos 5 tomas
-filtered_data <- ANALITIC %>%
-  group_by(ID) %>%
-  filter(!is.na(FGE) & n() >= 5) %>%
-  ungroup()
+# # Preparamos la información y cogemos (como antes) solo aquellos que tengas al menos 5 tomas
+# filtered_data <- ANALITIC %>%
+#   group_by(ID) %>%
+#   filter(!is.na(FGE) & n() >= 5) %>%
+#   ungroup()
+#
+# p <- ggplot(filtered_data, aes(x = fechatoma, y = FGE, group = ID, color = as.factor(ID))) +
+#   geom_line(alpha = 0.5) + # Set transparency to make overlapping lines more readable
+#   geom_point(alpha = 0.5, size = 1) + # Optional: add points with some transparency
+#   labs(title = "Evolution of FGE Across Patients",
+#        x = "Date of Sample (fechatoma)",
+#        y = "Filtrado Glomerular Estimado (FGE)",
+#        color = "Patient ID") +
+#   theme_minimal() +
+#   theme(
+#     legend.position = "none" # Hide the legend to avoid clutter
+#   ) +
+#   scale_color_viridis_d() # Use a discrete color scale for better visibility
+# # ggsave(paste("D:/gugui/Documentos/Universidad/TFG/Evoluciones_FGE/Evolution of FGE Across Patients", patient_id, ".png", sep = ""), plot = p, width = 10, height = 6)
+# ggsave("D:/Documentos/Universidad/TFG/Graficas/Evolution of FGE Across Patients.png", plot = p, width = 10, height = 6)
 
-p <- ggplot(filtered_data, aes(x = fechatoma, y = FGE, group = ID, color = as.factor(ID))) +
-  geom_line(alpha = 0.5) + # Set transparency to make overlapping lines more readable
-  geom_point(alpha = 0.5, size = 1) + # Optional: add points with some transparency
-  labs(title = "Evolution of FGE Across Patients",
-       x = "Date of Sample (fechatoma)",
-       y = "Filtrado Glomerular Estimado (FGE)",
-       color = "Patient ID") +
-  theme_minimal() +
-  theme(
-    legend.position = "none" # Hide the legend to avoid clutter
-  ) +
-  scale_color_viridis_d() # Use a discrete color scale for better visibility
-ggsave(paste("D:/gugui/Documentos/Universidad/TFG/Evoluciones_FGE/Evolution of FGE Across Patients", patient_id, ".png", sep = ""), plot = p, width = 10, height = 6)
 
-# FUTURAS GRAFICAS EN OTROS GRUPOS, POR EDAD, CP, ....
-# LUEGO CORRELACION
+# ------------------- CORRELACIONES -------------------
+print('------------------- CORRELACIONES -------------------')
+
+# Modelo lineal mixto
+for(i in 11:ncol(ANALITIC)) {
+  nombre_columna <- names(ANALITIC)[i]
+  modelo <- lmer(FGE ~ nombre_columna + fechatoma + (1 | ID), data = ANALITIC)
+}
+
+# Ver resumen del modelo
+summary(modelo)
 
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')
