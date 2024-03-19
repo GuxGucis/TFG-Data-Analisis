@@ -30,8 +30,8 @@
 
 # ========================================================================
 
-ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analiticas.csv", sep = ";", header = TRUE)
-INFORM <- read.csv("D:/gugui/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
+ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analiticas.csv", sep = ";", header = TRUE)
+INFORM <- read.csv("D:/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
 
 # ========================================================================
 
