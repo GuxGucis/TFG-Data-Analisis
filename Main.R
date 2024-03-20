@@ -166,6 +166,12 @@ NullCC <- sum(is.na(ANALITIC$Cociente.Album.Creat))
 ZeroCC <- sum(ANALITIC$Cociente.Album.Creat == 0)
 print(paste("Valores nulos del Cociente de albuminuria: ", NullCC, " Cantidad de valores a 0 en el Cociente de albuminaria: ", ZeroCC))
 
+# ANALITIC <- ANALITIC %>%
+#   select(
+#     1:3, # Selecciona las primeras tres columnas para mantenerlas en su lugar
+#     ncol(.)-1, ncol(.), # Selecciona las últimas dos columnas para moverlas
+#     4:(ncol(.)-2) # Selecciona el resto de las columnas para moverlas después de las últimas dos
+#   )
 
 # ------------------- LIMPIEZA FILAS -------------------
 print('------------------- LIMPIEZA FILAS -------------------')

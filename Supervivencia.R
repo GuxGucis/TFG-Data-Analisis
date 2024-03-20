@@ -79,13 +79,13 @@ covariables <- names(df_cox)[5:ncol(df_cox)] # Asume que las columnas de interé
 
 # Imputar valores faltantes para las covariables numéricas con la media de cada columna
 # Asume que 'edad_inicio' y todas las covariables desde la 5ª columna hacia adelante son numéricas
-df_cox <- df_cox %>%
+df_cox_fill <- df_cox %>%
   mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
 # Ajustar el modelo de Cox
-modelo_cox <- coxph(formula_cox, data = df_cox)
+modelo_cox <- coxph(formula_cox, data = df_cox_fill)
 
 # Ver el resumen del modelo
 summary(modelo_cox)
@@ -101,11 +101,22 @@ library(broom)
 # Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
 coeficientes_cox <- broom::tidy(modelo_cox, conf.int = TRUE, conf.level = 0.95)
 
-# Crear el gráfico de hazard ratios con ggplot2
-ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
-  geom_point() +
-  geom_errorbar(aes(ymin = conf.low, ymax = conf.high), width = 0.2) +
-  coord_flip() + # Pone los términos en el eje Y para mejor legibilidad
-  labs(x = "Covariables", y = "Log(Hazard Ratio)", title = "Efecto de las Covariables en el Riesgo Relativo") +
-  theme_minimal()
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
 
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo") +
+  theme_minimal() +
+  theme(legend.position = "right")
+
+print(g)
+
+# Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
+g <- g + ylim(c(-3, 3))
+
+print(g)
