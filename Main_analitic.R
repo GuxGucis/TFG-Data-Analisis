@@ -1,3 +1,4 @@
+print('================================= INICIO ANALITICAS =================================')
 # ------------------- CARGADO DE DATOS -------------------
 
 # Para la torre
@@ -9,6 +10,7 @@ ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = 
 # ------------------- LIBRERIAS -------------------
 
 library(tidyverse)
+library(stringr)
 library(dplyr)
 library(ggplot2)
 library(lme4)
