@@ -147,3 +147,9 @@ print(paste('Cantidad de ids, pacientes, han tenido un transplante: ', cantidad_
 
 cantidad_1s <- sum(ANALITIC$Transplante)
 print(paste('Cantidad transplante: ', cantidad_1s))
+
+# ------------------- FALLECIDO -------------------
+print('------------------- FALLECIDO -------------------')
+
+ANALITIC <- ANALITIC %>%
+  mutate(Fallecido = ifelse(is.na(FFallecido) | FFallecido == "", 0, 1))
