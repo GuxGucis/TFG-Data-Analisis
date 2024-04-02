@@ -178,6 +178,10 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
 
 print(g)
 
+g <- g + ylim(c(-3, 3))
+
+print(g)
+
 # =============== DIVIDIMOS DATAFRAMES =====================
 # ------------------- EN HEMODIALISIS -------------------
 print('------------------- EN HEMODIALISIS -------------------')
