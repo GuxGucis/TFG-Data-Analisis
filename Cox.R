@@ -1,10 +1,13 @@
+print('================================= MODELO DE COX =================================')
 
 library(survival)
 library(dplyr)
 library(tidyr)
 
-# ------------------- MODELO DE COX -------------------
-print('------------------- MODELO DE COX -------------------')
+# -------------------------------------------------------------------
+# ------------------------ PREPARACIÓN ------------------------------
+# -------------------------------------------------------------------
+print('------------------- PREPARACIÓN -------------------')
 
 # Como preparación al modelo de COX, usamos como evento la comparativa entre el primero y el ultimo valor que se tenga de FGE
 #   Si el valor ha crecido (que es mejor en teoria par la enfermedad) 0 y 1 si el valor es menor y a descendido y por tanto la enfermeda se considera que ha empeorado
@@ -70,12 +73,6 @@ df_resultados <- reduce(resultados, full_join, by = "ID")
 df_cox <- left_join(df_datos, df_resultados, by = "ID") #Las columnas de resultados se unen a datos
 
 # REORDENAR PORQUE TOC (muevo FGE y cociente mas adelante)
-# df_cox <- df_cox %>%
-#   select(
-#     1:3, # Selecciona las primeras tres columnas para mantenerlas en su lugar
-#     ncol(.)-1, ncol(.), # Selecciona las últimas dos columnas para moverlas
-#     4:(ncol(.)-2) # Selecciona el resto de las columnas para moverlas después de las últimas dos
-#   )
 df_cox <- df_cox %>%
   relocate("FGE", .after = "edad_inicio")
 df_cox <- df_cox %>%
@@ -89,8 +86,8 @@ df_cox <- left_join(df_cox, df_transplante_hemodialisis, by = "ID")
 df_cox <- df_cox %>%
   filter(tiempo_total > 0)
 
-# ------------------- GENERAL -------------------
-print('------------------- GENERAL -------------------')
+# ------------------- MODELO DE COX GENERAL -------------------
+print('------------------- MODELO DE COX GENERAL -------------------')
 
 # ------------------------------------------------------------------
 # ---------------------- MODELO DE COX -----------------------------

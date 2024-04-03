@@ -11,16 +11,16 @@ library(readxl)
 # ------------------- CARGADO DE DATOS -------------------
 
 # Para la torre
-# EXCEL <- read_excel("D:/gugui/Documentos/Universidad/TFG/Grupo/analiticas_filtradas.xlsx")
+EXCEL <- read_excel("D:/gugui/Documentos/Universidad/TFG/Grupo/analiticas_filtradas.xlsx")
 
 # Para el portatil
-EXCEL <- read_excel("D:/Documentos/Universidad/TFG/Grupo/analiticas_filtradas.xlsx")
+# EXCEL <- read_excel("D:/Documentos/Universidad/TFG/Grupo/analiticas_filtradas.xlsx")
 
 # Para la torre
-# INFORM <- read.csv("D:/gugui/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
+INFORM <- read.csv("D:/gugui/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
 
 # Para el portatil
-INFORM <- read.csv("D:/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
+# INFORM <- read.csv("D:/Documentos/Universidad/TFG/Datos_informe.csv", sep = ";", header = TRUE)
 
 # ------------------- CORRECCIÓN DE NOMBRES -------------------
 print('------------------- CORRECCIÓN DE NOMBRES -------------------')

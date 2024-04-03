@@ -2,10 +2,10 @@ print('================================= INICIO ANALITICAS =====================
 # ------------------- CARGADO DE DATOS -------------------
 
 # Para la torre
-# ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 # Para el portatil
-ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+# ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
 
 # ------------------- LIBRERIAS -------------------
 
@@ -194,9 +194,9 @@ print('------------------- IDs NO COINCIDENTES -------------------')
 
 # Leer los ID's del archivo de texto
 # Torre
-# ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
+ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
 # Portatil
-ids_texto <- readLines("D:/Documentos/Universidad/TFG/IDs.txt")
+# ids_texto <- readLines("D:/Documentos/Universidad/TFG/IDs.txt")
 
 # Convertir a numérico si los ID's son numéricos
 ids_texto <- as.numeric(ids_texto)
