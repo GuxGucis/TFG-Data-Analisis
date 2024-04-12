@@ -73,7 +73,7 @@ buscar_hemodialisis <- function(fila) {
 # ESTO SI NOS QUEDAMOS CON LO MIO
 # INFORM$hemodialisis <- apply(INFORM, 1, buscar_hemodialisis)
 
-# ------- EXCEL LORENA -------
+# ------- EXCEL GRUPO -------
 
 INFORM$ID <- as.numeric(as.character(INFORM$ID))
 EXCEL$ID <- as.numeric(as.character(EXCEL$ID))
@@ -127,7 +127,7 @@ buscar_transplante <- function(fila) {
 # Aplicar la función a cada fila del dataframe INFORM para crear la nueva columna 'transplante'
 # INFORM$transplante <- apply(INFORM, 1, buscar_transplante)
 
-# ------- EXCEL LORENA -------
+# ------- EXCEL GRUPO -------
 
 INFORM$ID <- as.numeric(as.character(INFORM$ID))
 EXCEL$ID <- as.numeric(as.character(EXCEL$ID))

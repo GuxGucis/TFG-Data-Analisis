@@ -14,6 +14,8 @@ library(stringr)
 library(dplyr)
 library(ggplot2)
 library(lme4)
+library(mice)
+library(parallel)
 
 # ------------------- CORRECCIÓN DE NOMBRES -------------------
 print('------------------- CORRECCIÓN DE NOMBRES -------------------')
@@ -51,45 +53,6 @@ ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma, format = "%d/%m/%Y")
 
 #El resto son los textos
 
-# ------------------- NULOS -------------------
-print('------------------- NULOS -------------------')
-
-ncolumnas <- ncol(ANALITIC)
-print(paste('Númoro de columnas: ', ncolumnas))
-
-nulos_por_columna <- colSums(is.na(ANALITIC))
-
-# Encuentra las columnas que tienen al menos un valor nulo
-columnas_con_nulos <- which(nulos_por_columna > 0)
-
-# Calcula el porcentaje de valores nulos en cada columna
-porcentaje_nulos_por_columna <- nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100
-null50 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >= 50)
-null90 <- which((nulos_por_columna[columnas_con_nulos] / nrow(ANALITIC) * 100) >= 90)
-print(paste("El numero de columnas con totales es de: ", length(ANALITIC), "La cantidad de columnas con valores nulos es: ", length(columnas_con_nulos)))
-print(paste("Cantidad de columnas con el 50% o mas de valores nulos: ", length(null50), "Columnas el 90% o mas de los valores nulos: ", length(null90)))
-
-# Crear un dataframe con la información
-DF_nulos <- data.frame(
-  Columna = names(nulos_por_columna),
-  Nulos = nulos_por_columna,
-  Porcentaje = as.numeric((nulos_por_columna/ncolumnas)*100)
-)
-
-# Gráfico de líneas para el porcentaje de valores nulos
-grafico_barras <- ggplot(DF_nulos, aes(x = Columna, y = Porcentaje)) +
-  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
-  labs(title = "Porcentaje de Valores Nulos por Columna", x = "Columna", y = "Porcentaje") +
-  theme_minimal()
-
-print(grafico_barras)
-
-print('------- quitar >90% nulos -------')
-# Quitarmos las columnas con mas del 90% nulo
-ANALITIC <- ANALITIC[, -(null90)]
-ncolumn <- ncol(ANALITIC)
-print(paste('Númoro de columnas: ', ncolumn))
-
 # ------------------- CAMBIAR VALORES RAROS A NA (-99999) -------------------
 print('------------------- CAMBIAR VALORES RAROS A NA (-99999) -------------------')
 
@@ -99,6 +62,50 @@ valores_a_reemplazar <- c(-9999999) # Añade aquí cualquier otro valor que nece
 # Reemplaza los valores en las columnas desde la 11 en adelante
 ANALITIC <- ANALITIC %>%
   mutate(across(11:ncol(.), ~replace(., . %in% valores_a_reemplazar, NA)))
+
+# ------------------- NULOS -------------------
+print('------------------- NULOS -------------------')
+
+ncolumnas <- ncol(ANALITIC)
+print(paste('Número de columnas: ', ncolumnas))
+
+nulos_por_columna <- colSums(is.na(ANALITIC))
+
+# Calcula el porcentaje de valores nulos en cada columna
+porcentaje_nulos_por_columna <- nulos_por_columna / nrow(ANALITIC) * 100
+
+# Crear un dataframe con la información
+DF_nulos <- data.frame(
+  Columna = names(ANALITIC),
+  Porcentaje = porcentaje_nulos_por_columna
+)
+
+# Filtra para incluir solo columnas con nulos
+DF_nulos <- DF_nulos[DF_nulos$Porcentaje > 0, ]
+
+# Gráfico de barras para el porcentaje de valores nulos
+grafico_barras <- ggplot(DF_nulos, aes(x = reorder(Columna, Porcentaje), y = Porcentaje)) +
+  geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
+  labs(title = "Porcentaje de Valores Nulos por Columna", x = "", y = "Porcentaje") +
+  theme_minimal() +
+  coord_flip() # Voltea el gráfico para mejor visualización de los nombres de las columnas
+
+print(grafico_barras)
+
+print('------- quitar >= 90% nulos -------')
+# Antes de la eliminación, imprimir el número de columnas
+ncolumnas_antes <- ncol(ANALITIC)
+print(paste('Número de columnas antes: ', ncolumnas_antes))
+
+# Identifica las columnas que tienen 60% o más de datos faltantes
+columnas_con_altos_nulos <- names(ANALITIC)[porcentaje_nulos_por_columna >= 90]
+
+# Elimina esas columnas de ANALITIC
+ANALITIC <- ANALITIC[, !(names(ANALITIC) %in% columnas_con_altos_nulos)]
+
+# Después de la eliminación, imprimir el número de columnas
+ncolumnas_despues <- ncol(ANALITIC)
+print(paste('Número de columnas después: ', ncolumnas_despues))
 
 # ------------------- ATIPICOS -------------------
 print('------------------- ATIPICOS -------------------')
@@ -125,6 +132,32 @@ print('------------------- ATIPICOS -------------------')
 #     print(p)
 #   }
 # }
+
+# ------------------- Rellenado de Datos con MICE -------------------
+print('------------------- Rellenado de Datos con MICE -------------------')
+# computacionalmente imposible por ahora pero no estaria de mas la verdad
+
+# # Aplica mice con el método 'cart'
+# # mice_analitics <- mice(ANALITIC, m=3, method='cart', seed=123)
+#
+# # Detectar el número de núcleos lógicos
+# num_cores <- detectCores(logical = TRUE)
+#
+# # Crear un clúster con un núcleo menos que el total para dejar recursos para el sistema
+# cl <- makeCluster(num_cores - 1)
+#
+# # Usar el clúster para paralelizar mice
+# mice_data <- mice(ANALITIC, m=3, method='cart', seed=123, maxit=3, cluster=cl)
+#
+# # Detener el clúster una vez completada la imputación
+# stopCluster(cl)
+#
+# # Selecciona un conjunto imputado
+# df_analitic_1 <- complete(mice_analitics, 1)
+# df_analitic_2 <- complete(mice_analitics, 2)
+# df_analitic_3 <- complete(mice_analitics, 3)
+# df_analitic_4 <- complete(mice_analitics, 4)
+# df_analitic_5 <- complete(mice_analitics, 5)
 
 # ------------------- Filtrado glomerular estimado -------------------
 print('------------------- Filtrado glomerular estimado -------------------')
