@@ -4,6 +4,14 @@ library(survival)
 library(dplyr)
 library(tidyr)
 
+# ------------------- CARGADO DE DATOS -------------------
+
+# ------------- TORRE -------------
+# baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
+
+# ------------- PORTATIL -------------
+baseurl <- "D:/Documentos/Universidad/TFG/"
+
 # -------------------------------------------------------------------
 # ------------------------ PREPARACIÓN ------------------------------
 # -------------------------------------------------------------------
@@ -146,11 +154,13 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_ALL.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-3, 3))
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_ALL_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # -------------------------------------------------------------------
 # ---------------------- GRAFICA DE COX -----------------------------
@@ -174,10 +184,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_ALL.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 g <- g + ylim(c(-3, 3))
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_ALL_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # =============== DIVIDIMOS DATAFRAMES =====================
 # ------------------- EN HEMODIALISIS -------------------
@@ -238,10 +250,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_HM.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-3, 3))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_HM_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # -------------------- (sobre Fallecido) ---------------------------
 
@@ -262,6 +276,7 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_HM.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # ------------------- CON TRANSPLANTE -------------------
 print('------------------- CON TRANSPLANTE -------------------')
@@ -321,10 +336,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_TR.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-1000, 1000))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_TR_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # -------------------- (sobre Fallecido) ---------------------------
 
@@ -345,10 +362,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_TR.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-1000, 1000))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_TR_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # ------------------- HEMODIALISIS Y TRANSPLANTE -------------------
 print('------------------- HEMODIALISIS Y TRANSPLANTE -------------------')
@@ -408,10 +427,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_HMTR.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-1000, 1000))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_HMTR_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # -------------------- (sobre Fallecido) ---------------------------
 
@@ -432,10 +453,12 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_HMTR.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-1000, 1000))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_HMTR_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # ------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------
 print('------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------')
@@ -495,6 +518,7 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FGE_NN.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # -------------------- (sobre Fallecido) ---------------------------
 
@@ -515,8 +539,10 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
   theme(legend.position = "right")
 
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_NN.png"), plot = g, width = 10, height = 9, dpi = 300)
 
 # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
 g <- g + ylim(c(-3, 3))
 print(g)
+ggsave(paste0(baseurl, "Graficas/COX_FLL_NN_Sca.png"), plot = g, width = 10, height = 9, dpi = 300)
 

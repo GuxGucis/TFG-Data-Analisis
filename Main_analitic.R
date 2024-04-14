@@ -1,11 +1,13 @@
 print('================================= INICIO ANALITICAS =================================')
 # ------------------- CARGADO DE DATOS -------------------
 
-# Para la torre
-ANALITIC <- read.csv("D:/gugui/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+# ------------- TORRE -------------
+# baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
-# Para el portatil
-# ANALITIC <- read.csv("D:/Documentos/Universidad/TFG/Analitics.csv", sep = ";", header = TRUE)
+# ------------- PORTATIL -------------
+baseurl <- "D:/Documentos/Universidad/TFG/"
+
+ANALITIC <- read.csv(paste0(baseurl, "Analitics.csv"), sep = ";", header = TRUE)
 
 # ------------------- LIBRERIAS -------------------
 
@@ -226,10 +228,7 @@ print('------------------- IDs NO COINCIDENTES -------------------')
 #Para los ID's que no coinciden con el otro excel, y por lo tanto, faltan datos de los mismos
 
 # Leer los ID's del archivo de texto
-# Torre
-ids_texto <- readLines("D:/gugui/Documentos/Universidad/TFG/IDs.txt")
-# Portatil
-# ids_texto <- readLines("D:/Documentos/Universidad/TFG/IDs.txt")
+ids_texto <- readLines(paste0(baseurl, "IDs.txt"))
 
 # Convertir a numérico si los ID's son numéricos
 ids_texto <- as.numeric(ids_texto)
