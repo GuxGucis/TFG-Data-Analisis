@@ -129,13 +129,13 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_ALL_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_ALL_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-3, 3))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_ALL_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_ALL_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # -------------------------------------------------------------------
   # ---------------------- GRAFICA DE COX -----------------------------
@@ -159,12 +159,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_ALL_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_ALL_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   g <- g + ylim(c(-3, 3))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_ALL_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_ALL_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # =============== DIVIDIMOS DATAFRAMES =====================
   # ------------------- EN HEMODIALISIS -------------------
@@ -225,12 +225,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HM_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HM_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-3, 3))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HM_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HM_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
@@ -251,7 +251,7 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HM_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HM_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # ------------------- CON TRANSPLANTE -------------------
   print('------------------- CON TRANSPLANTE -------------------')
@@ -311,12 +311,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_TR_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_TR_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-1000, 1000))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_TR_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_TR_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
@@ -337,12 +337,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_TR_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_TR_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-1000, 1000))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_TR_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_TR_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # ------------------- HEMODIALISIS Y TRANSPLANTE -------------------
   print('------------------- HEMODIALISIS Y TRANSPLANTE -------------------')
@@ -402,12 +402,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HMTR_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HMTR_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-1000, 1000))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HMTR_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_HMTR_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
@@ -428,12 +428,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HMTR_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HMTR_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-1000, 1000))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HMTR_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_HMTR_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # ------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------
   print('------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------')
@@ -493,7 +493,7 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_NN_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FGE_NN_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
@@ -514,12 +514,12 @@ for (i in mice){
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_NN_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_NN_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   # Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
   g <- g + ylim(c(-3, 3))
   print(g)
-  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_NN_Sca_", i, ".png"), plot = g, width = 10, height = 9, dpi = 300)
+  ggsave(paste0(baseurl, "Graficas/Cox2/COX_FLL_NN_Sca_", i, ".png"), plot = g, width = 14, height = 10, dpi = 300)
 
   dev.off()
 }
