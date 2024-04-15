@@ -2,10 +2,10 @@ print('================================= INICIO ANALITICAS =====================
 # ------------------- CARGADO DE DATOS -------------------
 
 # ------------- TORRE -------------
-# baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
+baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
 # ------------- PORTATIL -------------
-baseurl <- "D:/Documentos/Universidad/TFG/"
+# baseurl <- "D:/Documentos/Universidad/TFG/"
 
 ANALITIC <- read.csv(paste0(baseurl, "Analitics.csv"), sep = ";", header = TRUE)
 
@@ -310,3 +310,5 @@ print('------------------- CORRELACIONES -------------------')
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')
 # write.csv(ANALITIC, "D:/gugui/Documentos/Universidad/TFG/NewANALITIC.csv", row.names = FALSE)
+
+print('================================= FIN ANALITICAS =================================')

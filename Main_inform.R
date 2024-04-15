@@ -11,10 +11,10 @@ library(readxl)
 # ------------------- CARGADO DE DATOS -------------------
 
 # ------------- TORRE -------------
-# baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
+baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
 # ------------- PORTATIL -------------
-baseurl <- "D:/Documentos/Universidad/TFG/"
+# baseurl <- "D:/Documentos/Universidad/TFG/"
 
 
 EXCEL <- read_excel(paste0(baseurl, "Grupo/analiticas_filtradas.xlsx"))
@@ -155,3 +155,5 @@ print('------------------- FALLECIDO -------------------')
 
 ANALITIC <- ANALITIC %>%
   mutate(Fallecido = ifelse(is.na(FFallecido) | FFallecido == "", 0, 1))
+
+print('================================= FIN INFORMES =================================')
