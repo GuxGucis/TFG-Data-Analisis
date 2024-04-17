@@ -3,6 +3,9 @@ print('================================= MODELO DE COX =========================
 library(survival)
 library(dplyr)
 library(tidyr)
+library(survminer)
+library(ggplot2)
+library(broom)
 
 # ------------------- CARGADO DE DATOS -------------------
 
@@ -129,13 +132,11 @@ formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + "
 modelo_cox_Fallecido <- coxph(formula_cox, data = df_cox_fill)
 
 # -------------------------------------------------------------------
-# ---------------------- GRAFICA DE COX -----------------------------
+# ---------------------- GRAFICAS DE COX ----------------------------
 # ------------------------ (sobre FGE) ------------------------------
 # -------------------------------------------------------------------
 
-library(survminer)
-library(ggplot2)
-library(broom)
+# ------------------------ HAZARD RATIO -----------------------------
 
 # Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
 coeficientes_cox <- broom::tidy(modelo_cox_FGE, conf.int = TRUE, conf.level = 0.95)
@@ -161,6 +162,29 @@ g <- g + ylim(c(-3, 3))
 
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_ALL_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
+# ------------------- (WORKING) -------------------
+# # Suponiendo que tienes una variable Estado con 4 niveles
+# estados <- unique(df_cox_fill$Estado)
+#
+# # Crear un nuevo dataframe para las predicciones
+# # En este caso, replicamos cada estado tantas veces como sea necesario para las predicciones
+# newdata <- data.frame(Estado = rep(unique(df_cox$Estado), each = 1))
+#
+# # Calcular las curvas de supervivencia ajustadas por Estado
+# surv_ajustado <- survfit(modelo_cox_FGE, newdata = newdata)
+#
+# # Gráfico de las curvas ajustadas por Estado
+# g <- ggsurvplot(surv_ajustado, data = newdata,
+#                 xlab = "Tiempo",
+#                 ylab = "Probabilidad de Supervivencia",
+#                 title = "Curvas de Supervivencia Ajustadas por Estado",
+#                 ggtheme = theme_minimal() +
+#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
+#                         panel.background = element_rect(fill = "white", colour = "black"),
+#                         legend.background = element_rect(fill = "white", colour = "black"))
+# )
 
 # -------------------------------------------------------------------
 # ---------------------- GRAFICA DE COX -----------------------------

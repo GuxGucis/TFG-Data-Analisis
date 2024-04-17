@@ -5,6 +5,8 @@ library(dplyr)
 library(ggplot2)
 library(tidyr)
 library(mice)
+library(survminer)
+library(broom)
 
 # ------------------- CARGADO DE DATOS -------------------
 
@@ -29,7 +31,7 @@ print('------------------- Rellenado de Datos con MICE -------------------')
 # cl <- makeCluster(num_cores - 2)
 #
 # # Usar el clúster para paralelizar mice
-# df_cox_mice <- mice(df_cox, m=5, method='cart', seed=123, maxit=5, parallel = "snow", cluster=cl)
+# df_cox_mice <- mice(df_cox, m=7, method='cart', seed=123, parallel = "snow", maxit=7, cluster=cl)
 #
 # # Detener el clúster una vez completada la imputación
 # stopCluster(cl)
@@ -40,12 +42,16 @@ print('------------------- Rellenado de Datos con MICE -------------------')
 # df_cox_3 <- complete(df_cox_mice, 3)
 # df_cox_4 <- complete(df_cox_mice, 4)
 # df_cox_5 <- complete(df_cox_mice, 5)
+# df_cox_6 <- complete(df_cox_mice, 6)
+# df_cox_7 <- complete(df_cox_mice, 7)
 #
 # write.csv(df_cox_1, paste0(baseurl, "Mice/tend_mice_1.csv"), row.names = FALSE)
 # write.csv(df_cox_2, paste0(baseurl, "Mice/tend_mice_2.csv"), row.names = FALSE)
 # write.csv(df_cox_3, paste0(baseurl, "Mice/tend_mice_3.csv"), row.names = FALSE)
 # write.csv(df_cox_4, paste0(baseurl, "Mice/tend_mice_4.csv"), row.names = FALSE)
 # write.csv(df_cox_5, paste0(baseurl, "Mice/tend_mice_5.csv"), row.names = FALSE)
+# write.csv(df_cox_6, paste0(baseurl, "Mice/tend_mice_6.csv"), row.names = FALSE)
+# write.csv(df_cox_7, paste0(baseurl, "Mice/tend_mice_7.csv"), row.names = FALSE)
 
 print('================================= MODELO DE COX =================================')
 
@@ -59,8 +65,10 @@ df_cox_2 <- read.csv(paste0(baseurl, "Mice/tend_mice_2.csv"), sep = ",", header 
 df_cox_3 <- read.csv(paste0(baseurl, "Mice/tend_mice_3.csv"), sep = ",", header = TRUE)
 df_cox_4 <- read.csv(paste0(baseurl, "Mice/tend_mice_4.csv"), sep = ",", header = TRUE)
 df_cox_5 <- read.csv(paste0(baseurl, "Mice/tend_mice_5.csv"), sep = ",", header = TRUE)
+df_cox_6 <- read.csv(paste0(baseurl, "Mice/tend_mice_6.csv"), sep = ",", header = TRUE)
+df_cox_7 <- read.csv(paste0(baseurl, "Mice/tend_mice_7.csv"), sep = ",", header = TRUE)
 
-mice <- list(1, 2, 3, 4, 5)
+mice <- list(1, 2, 3, 4, 5, 6, 7)
 
 for (i in mice){
 
@@ -80,15 +88,10 @@ for (i in mice){
   # Preparar la fórmula del modelo de Cox incluyendo todas las columnas desde la 5ª en adelante como covariables
   covariables <- names(df_cox)[5:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 5ª posición
 
-  # Imputar valores faltantes para las covariables numéricas con la media de cada columna
-  # Asume que 'edad_inicio' y todas las covariables desde la 5ª columna hacia adelante son numéricas
-  df_cox_fill <- df_cox %>%
-    mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-  formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
+  formula_cox_FGE <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
   # Ajustar el modelo de Cox
-  modelo_cox_FGE <- coxph(formula_cox, data = df_cox_fill)
+  modelo_cox_FGE <- coxph(formula_cox_FGE, data = df_cox)
 
   # Ver el resumen del modelo
   # summary(modelo_cox)
@@ -98,19 +101,15 @@ for (i in mice){
   # -------------------- (sobre Fallecido) ---------------------------
   # ------------------------------------------------------------------
 
-  formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
+  formula_cox_FLL <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
   # Ajustar el modelo de Cox
-  modelo_cox_Fallecido <- coxph(formula_cox, data = df_cox_fill)
+  modelo_cox_Fallecido <- coxph(formula_cox_FLL, data = df_cox)
 
   # -------------------------------------------------------------------
   # ---------------------- GRAFICA DE COX -----------------------------
   # ------------------------ (sobre FGE) ------------------------------
   # -------------------------------------------------------------------
-
-  library(survminer)
-  library(ggplot2)
-  library(broom)
 
   # Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
   coeficientes_cox <- broom::tidy(modelo_cox_FGE, conf.int = TRUE, conf.level = 0.95)
@@ -173,37 +172,19 @@ for (i in mice){
   df_cox_hm <- df_cox %>%
     filter(Transplante == 0 & Hemodialisis == 1)
 
-  # ---------------------- NULOS -----------------------------
-
-  # Primero, calcula el porcentaje de valores NA por columna
-  porcentaje_nulos <- sapply(df_cox_hm, function(x) sum(is.na(x)) / length(x))
-
-  # Identifica las columnas con más del 90% de valores NA
-  columnas_a_eliminar <- names(porcentaje_nulos[porcentaje_nulos > 0.9])
-
-  # Elimina esas columnas del dataframe
-  df_cox_hm <- df_cox_hm[, !(names(df_cox_hm) %in% columnas_a_eliminar)]
-
   # ---------------------- MODELO DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
 
   covariables <- names(df_cox_hm)[5:ncol(df_cox_hm)]
 
-  df_cox_hm_fill <- df_cox_hm %>%
-    mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-  formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_hm_FGE <- coxph(formula_cox, data = df_cox_hm_fill)
+  modelo_cox_hm_FGE <- coxph(formula_cox_FGE, data = df_cox_hm)
 
   # Ver el resumen del modelo
   # summary(modelo_cox_hm)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
-  formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_hm_Fallecido <- coxph(formula_cox, data = df_cox_hm_fill)
+  modelo_cox_hm_Fallecido <- coxph(formula_cox_FLL, data = df_cox_hm)
 
   # ---------------------- GRAFICA DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
@@ -259,37 +240,19 @@ for (i in mice){
   df_cox_tr <- df_cox %>%
     filter(Transplante == 1 & Hemodialisis == 0)
 
-  # ---------------------- NULOS -----------------------------
-
-  # Primero, calcula el porcentaje de valores NA por columna
-  porcentaje_nulos <- sapply(df_cox_tr, function(x) sum(is.na(x)) / length(x))
-
-  # Identifica las columnas con más del 90% de valores NA
-  columnas_a_eliminar <- names(porcentaje_nulos[porcentaje_nulos > 0.9])
-
-  # Elimina esas columnas del dataframe
-  df_cox_tr <- df_cox_tr[, !(names(df_cox_tr) %in% columnas_a_eliminar)]
-
   # ---------------------- MODELO DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
 
   covariables <- names(df_cox_tr)[5:ncol(df_cox_tr)]
 
-  df_cox_tr_fill <- df_cox_tr %>%
-    mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-  formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_tr_FGE <- coxph(formula_cox, data = df_cox_tr_fill)
+  modelo_cox_tr_FGE <- coxph(formula_cox_FGE, data = df_cox_tr)
 
   # Ver el resumen del modelo
   # summary(modelo_cox_tr)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
-  formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_tr_Fallecido <- coxph(formula_cox, data = df_cox_tr_fill)
+  modelo_cox_tr_Fallecido <- coxph(formula_cox_FLL, data = df_cox_tr)
 
   # ---------------------- GRAFICA DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
@@ -350,37 +313,19 @@ for (i in mice){
   df_cox_tr_hm <- df_cox %>%
     filter(Transplante == 1 & Hemodialisis == 1)
 
-  # ---------------------- NULOS -----------------------------
-
-  # Primero, calcula el porcentaje de valores NA por columna
-  porcentaje_nulos <- sapply(df_cox_tr_hm, function(x) sum(is.na(x)) / length(x))
-
-  # Identifica las columnas con más del 90% de valores NA
-  columnas_a_eliminar <- names(porcentaje_nulos[porcentaje_nulos > 0.9])
-
-  # Elimina esas columnas del dataframe
-  df_cox_tr_hm <- df_cox_tr_hm[, !(names(df_cox_tr_hm) %in% columnas_a_eliminar)]
-
   # ---------------------- MODELO DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
 
   covariables <- names(df_cox_tr_hm)[5:ncol(df_cox_tr_hm)]
 
-  df_cox_tr_hm_fill <- df_cox_tr_hm %>%
-    mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-  formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_tr_hm_FGE <- coxph(formula_cox, data = df_cox_tr_hm_fill)
+  modelo_cox_tr_hm_FGE <- coxph(formula_cox_FGE, data = df_cox_tr_hm)
 
   # Ver el resumen del modelo
   # summary(modelo_cox_tr_hm)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
-  formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_tr_hm_Fallecido <- coxph(formula_cox, data = df_cox_tr_hm_fill)
+  modelo_cox_tr_hm_Fallecido <- coxph(formula_cox_FLL, data = df_cox_tr_hm)
 
   # ---------------------- GRAFICA DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
@@ -441,37 +386,19 @@ for (i in mice){
   df_cox_NN <- df_cox %>%
     filter(Transplante == 0 & Hemodialisis == 0)
 
-  # ---------------------- NULOS -----------------------------
-
-  # Primero, calcula el porcentaje de valores NA por columna
-  porcentaje_nulos <- sapply(df_cox_NN, function(x) sum(is.na(x)) / length(x))
-
-  # Identifica las columnas con más del 90% de valores NA
-  columnas_a_eliminar <- names(porcentaje_nulos[porcentaje_nulos > 0.9])
-
-  # Elimina esas columnas del dataframe
-  df_cox_NN <- df_cox_NN[, !(names(df_cox_NN) %in% columnas_a_eliminar)]
-
   # ---------------------- MODELO DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------
 
   covariables <- names(df_cox_NN)[5:ncol(df_cox_NN)]
 
-  df_cox_NN_fill <- df_cox_NN %>%
-    mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ifelse(is.na(.), mean(., na.rm = TRUE), .)))
-
-  formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_NN_FGE <- coxph(formula_cox, data = df_cox_NN_fill)
+  modelo_cox_NN_FGE <- coxph(formula_cox_FGE, data = df_cox_NN)
 
   # Ver el resumen del modelo
   # summary(modelo_cox_NN)
 
   # -------------------- (sobre Fallecido) ---------------------------
 
-  formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
-
-  modelo_cox_NN_Fallecido <- coxph(formula_cox, data = df_cox_NN_fill)
+  modelo_cox_NN_Fallecido <- coxph(formula_cox_FLL, data = df_cox_NN)
 
   # ---------------------- GRAFICA DE COX -----------------------------
   # ----------------------- (sobre FGE) ------------------------------

@@ -72,8 +72,7 @@ g <- ggsurvplot(modelo_km_FGE, data = df_km,
         theme(plot.background = element_rect(fill = "white", colour = "black"),
               panel.background = element_rect(fill = "white", colour = "black"),
               legend.background = element_rect(fill = "white", colour = "black"))
-
-)
+  )
 
 print(g)
 # ggsave(paste0(baseurl, "Graficas/KM/KM_FGE.png"), plot = g, width = 18, height = 9, dpi = 300)
@@ -95,7 +94,7 @@ g <- ggsurvplot(modelo_km_Fallecido, data = df_km,
                   theme(plot.background = element_rect(fill = "white", colour = "black"),
                         panel.background = element_rect(fill = "white", colour = "black"),
                         legend.background = element_rect(fill = "white", colour = "black"))
-)
+  )
 
 print(g)
 # ggsave(paste0(baseurl, "Graficas/KM/KM_FLL.png"), plot = g, width = 18, height = 9, dpi = 300)
