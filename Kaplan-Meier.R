@@ -20,22 +20,22 @@ print('------------------- PREPARACIÓN -------------------')
 
 df_km <- df_cox
 
-# Columna Estado para crear los grupo de kaplan-meier
-df_km <- df_km %>%
-  mutate(Estado = case_when(
-    Hemodialisis == 1 & Transplante == 0 ~ "hemodialisis",
-    Hemodialisis == 0 & Transplante == 1 ~ "transplante",
-    Hemodialisis == 1 & Transplante == 1 ~ "ambas",
-    Hemodialisis == 0 & Transplante == 0 ~ "nada"
-  ))
-
-# Crear el dataframe EXTRA seleccionando solo las columnas que quiero guardar
-EXTRA <- df_km %>%
-  select(ID, Hemodialisis, Transplante)
-
-# Columnas no necesarias
-df_km <- df_km %>%
-  select(-c(Hemodialisis, Transplante))
+# # Columna Estado para crear los grupo de kaplan-meier
+# df_km <- df_km %>%
+#   mutate(Estado = case_when(
+#     Hemodialisis == 1 & Transplante == 0 ~ "hemodialisis",
+#     Hemodialisis == 0 & Transplante == 1 ~ "transplante",
+#     Hemodialisis == 1 & Transplante == 1 ~ "ambas",
+#     Hemodialisis == 0 & Transplante == 0 ~ "nada"
+#   ))
+#
+# # Crear el dataframe EXTRA seleccionando solo las columnas que quiero guardar
+# EXTRA <- df_km %>%
+#   select(ID, Hemodialisis, Transplante)
+#
+# # Columnas no necesarias
+# df_km <- df_km %>%
+#   select(-c(Hemodialisis, Transplante))
 
 print('------------------- MODELO KAPLAN-MEIER -------------------')
 # ------------------------------------------------------------------
