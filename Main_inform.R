@@ -3,6 +3,8 @@ print('================================= INICIO INFORMES =======================
 # ------------------- LIBRERIAS -------------------
 
 library(tidyverse)
+library(stringr)
+library(parallel)
 library(dplyr)
 library(ggplot2)
 library(lme4)
@@ -16,6 +18,9 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 # ------------- PORTATIL -------------
 # baseurl <- "D:/Documentos/Universidad/TFG/"
 
+# ------------- DATOS -------------
+
+ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_ma.csv"), sep = ",", header = TRUE)
 
 EXCEL <- read_excel(paste0(baseurl, "Grupo/analiticas_filtradas.xlsx"))
 
@@ -155,5 +160,14 @@ print('------------------- FALLECIDO -------------------')
 
 ANALITIC <- ANALITIC %>%
   mutate(Fallecido = ifelse(is.na(FFallecido) | FFallecido == "", 0, 1))
+
+
+ANALITIC <- ANALITIC %>%
+  arrange(ID, fechatoma)
+
+# ------------------- EXPORTAR -------------------
+print('------------------- EXPORTAR -------------------')
+
+write.csv(ANALITIC, paste0(baseurl, "data/ANALITIC_mi.csv"), row.names = FALSE)
 
 print('================================= FIN INFORMES =================================')

@@ -6,6 +6,11 @@ library(tidyr)
 library(survminer)
 library(ggplot2)
 library(broom)
+library(tidyverse)
+library(lme4)
+library(readxl)
+library(stringr)
+library(parallel)
 
 # ------------------- CARGADO DE DATOS -------------------
 
@@ -25,6 +30,11 @@ print('------------------- PREPARACIÓN -------------------')
 #   El tiempo en dias que lleva en el estudio (es decir el tiempo en el que ha empeorado o mejorado)
 #   La edad con la que empieza el estudio
 
+# ------------- DATOS -------------
+
+ANALITIC <- data.frame(read.csv(paste0(baseurl, "data/ANALITIC_mi.csv"), sep = ",", header = TRUE))
+ANALITIC$FFECCITA <- as.Date(ANALITIC$FFECCITA)
+ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma)
 
 df_datos <- ANALITIC %>%
   arrange(ID, fechatoma) %>%
@@ -116,6 +126,9 @@ df_cox <- df_cox %>%
 df_cox <- df_cox %>%
   relocate("Estado", .after = "edad_inicio")
 
+df_cox <- df_cox %>%
+  relocate("Fallecido", .after = "FGE")
+
 # ------------------- MODELO DE COX GENERAL -------------------
 print('------------------- MODELO DE COX GENERAL -------------------')
 
@@ -125,7 +138,7 @@ print('------------------- MODELO DE COX GENERAL -------------------')
 # ------------------------------------------------------------------
 
 # Preparar la fórmula del modelo de Cox incluyendo todas las columnas desde la 6ª en adelante como covariables
-covariables <- names(df_cox)[6:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
+covariables <- names(df_cox)[7:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
 
 # Imputar valores faltantes para las covariables numéricas con la media de cada columna
 # Asume que 'edad_inicio' y todas las covariables desde la 5ª columna hacia adelante son numéricas
@@ -133,10 +146,11 @@ df_cox_fill <- df_cox %>%
   mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
 
 df_cox_fill$Estado <- as.factor(df_cox_fill$Estado)
-formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
+formula_cox_FGE <- as.formula(paste("Surv(tiempo_total, FGE) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
+formula_cox_FLL <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
 
 # Ajustar el modelo de Cox
-modelo_cox_FGE <- coxph(formula_cox, data = df_cox_fill)
+modelo_cox_FGE <- coxph(formula_cox_FGE, data = df_cox_fill)
 
 # Ver el resumen del modelo
 # summary(modelo_cox)
@@ -147,7 +161,7 @@ modelo_cox_FGE <- coxph(formula_cox, data = df_cox_fill)
 # ------------------------------------------------------------------
 
 # Ajustar el modelo de Cox
-modelo_cox_Fallecido <- coxph(formula_cox, data = df_cox_fill)
+modelo_cox_Fallecido <- coxph(formula_cox_FLL, data = df_cox_fill)
 
 # -------------------------------------------------------------------
 # ---------------------- GRAFICAS DE COX ----------------------------
@@ -189,7 +203,7 @@ surv_ajustado_FGE <- survfit(modelo_cox_FGE)
 # P-VALOR
 logrank_test <- survdiff(Surv(tiempo_total, FGE) ~ Estado, data = df_cox_fill)
 p_valor_logrank <- pchisq(logrank_test$chisq, length(logrank_test$n) - 1, lower.tail = FALSE)
-print(paste0('P-Valor: ', p_valor_logrank))
+print(paste0('P-Valor sobre FGE: ', p_valor_logrank))
 
 # Gráfico de las curvas ajustadas por Estado
 g <- ggsurvplot(surv_ajustado_FGE, data = df_cox_fill,
@@ -243,9 +257,9 @@ ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_ALL_harz_Sca.png"), plot = g, widt
 surv_ajustado_FLL <- survfit(modelo_cox_Fallecido)
 
 # P-VALOR
-logrank_test <- survdiff(Surv(tiempo_total, FGE) ~ Estado, data = df_cox_fill)
+logrank_test <- survdiff(Surv(tiempo_total, Fallecido) ~ Estado, data = df_cox_fill)
 p_valor_logrank <- pchisq(logrank_test$chisq, length(logrank_test$n) - 1, lower.tail = FALSE)
-print(paste0('P-Valor: ', p_valor_logrank))
+print(paste0('P-Valor sobre Fallecido: ', p_valor_logrank))
 
 # Gráfico de las curvas ajustadas por Estado
 g <- ggsurvplot(surv_ajustado_FLL, data = df_cox_fill,
@@ -291,7 +305,7 @@ df_cox_hm_fill <- df_cox_hm %>%
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_hm_FGE <- coxph(formula_cox, data = df_cox_hm_fill)
+modelo_cox_hm_FGE <- coxph(formula_cox_FGE, data = df_cox_hm_fill)
 
 # Ver el resumen del modelo
 # summary(modelo_cox_hm)
@@ -300,7 +314,7 @@ modelo_cox_hm_FGE <- coxph(formula_cox, data = df_cox_hm_fill)
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_hm_Fallecido <- coxph(formula_cox, data = df_cox_hm_fill)
+modelo_cox_hm_Fallecido <- coxph(formula_cox_FLL, data = df_cox_hm_fill)
 
 # ---------------------- GRAFICA DE COX -----------------------------
 # ----------------------- (sobre FGE) ------------------------------
@@ -331,27 +345,6 @@ g <- g + ylim(c(-3, 3))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_HM_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_hm_FGE <- survfit(modelo_cox_hm_FGE)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_hm_FGE, data = df_cox_hm_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre FGE",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_HM_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
-
 # -------------------- (sobre Fallecido) ---------------------------
 
 # ------------------------ HAZARD RATIO -----------------------------
@@ -374,27 +367,6 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
 
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_HM_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
-
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_hm_Fallecido <- survfit(modelo_cox_hm_Fallecido)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_hm_Fallecido, data = df_cox_hm_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre Fallecimiento",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_HM_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
 
 # ------------------- CON TRANSPLANTE -------------------
 print('------------------- CON TRANSPLANTE -------------------')
@@ -423,7 +395,7 @@ df_cox_tr_fill <- df_cox_tr %>%
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_tr_FGE <- coxph(formula_cox, data = df_cox_tr_fill)
+modelo_cox_tr_FGE <- coxph(formula_cox_FGE, data = df_cox_tr_fill)
 
 # Ver el resumen del modelo
 # summary(modelo_cox_tr)
@@ -432,7 +404,7 @@ modelo_cox_tr_FGE <- coxph(formula_cox, data = df_cox_tr_fill)
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_tr_Fallecido <- coxph(formula_cox, data = df_cox_tr_fill)
+modelo_cox_tr_Fallecido <- coxph(formula_cox_FLL, data = df_cox_tr_fill)
 
 # ---------------------- GRAFICA DE COX -----------------------------
 # ----------------------- (sobre FGE) -------------------------------
@@ -463,26 +435,6 @@ g <- g + ylim(c(-1000, 1000))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_TR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_FGE <- survfit(modelo_cox_tr_FGE)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_FGE, data = df_cox_tr_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre FGE",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_TR_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
-
 # -------------------- (sobre Fallecido) ---------------------------
 
 # ------------------------ HAZARD RATIO -----------------------------
@@ -511,27 +463,6 @@ g <- g + ylim(c(-1000, 1000))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_TR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_Fallecido <- survfit(modelo_cox_tr_Fallecido)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_Fallecido, data = df_cox_tr_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre Fallecimiento",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_TR_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
-
 # ------------------- HEMODIALISIS Y TRANSPLANTE -------------------
 print('------------------- HEMODIALISIS Y TRANSPLANTE -------------------')
 
@@ -559,7 +490,7 @@ df_cox_tr_hm_fill <- df_cox_tr_hm %>%
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_tr_hm_FGE <- coxph(formula_cox, data = df_cox_tr_hm_fill)
+modelo_cox_tr_hm_FGE <- coxph(formula_cox_FGE, data = df_cox_tr_hm_fill)
 
 # Ver el resumen del modelo
 # summary(modelo_cox_tr_hm)
@@ -568,7 +499,7 @@ modelo_cox_tr_hm_FGE <- coxph(formula_cox, data = df_cox_tr_hm_fill)
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_tr_hm_Fallecido <- coxph(formula_cox, data = df_cox_tr_hm_fill)
+modelo_cox_tr_hm_Fallecido <- coxph(formula_cox_FLL, data = df_cox_tr_hm_fill)
 
 # ---------------------- GRAFICA DE COX -----------------------------
 # ----------------------- (sobre FGE) -------------------------------
@@ -599,27 +530,6 @@ g <- g + ylim(c(-1000, 1000))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_HMTR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_hm_FGE <- survfit(modelo_cox_tr_hm_FGE)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_hm_FGE, data = df_cox_tr_hm_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre FGE",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_HMTR_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
-
 # -------------------- (sobre Fallecido) ---------------------------
 
 # ------------------------ HAZARD RATIO -----------------------------
@@ -648,27 +558,6 @@ g <- g + ylim(c(-1000, 1000))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_HMTR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_hm_Fallecido <- survfit(modelo_cox_tr_hm_Fallecido)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_hm_Fallecido, data = df_cox_tr_hm_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre Fallecimiento",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_HMTR_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
-
 # ------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------
 print('------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------')
 
@@ -696,7 +585,7 @@ df_cox_NN_fill <- df_cox_NN %>%
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, FGE) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_NN_FGE <- coxph(formula_cox, data = df_cox_NN_fill)
+modelo_cox_NN_FGE <- coxph(formula_cox_FGE, data = df_cox_NN_fill)
 
 # Ver el resumen del modelo
 # summary(modelo_cox_NN)
@@ -705,7 +594,7 @@ modelo_cox_NN_FGE <- coxph(formula_cox, data = df_cox_NN_fill)
 
 formula_cox <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ edad_inicio + ", paste(covariables, collapse = " + ")))
 
-modelo_cox_NN_Fallecido <- coxph(formula_cox, data = df_cox_NN_fill)
+modelo_cox_NN_Fallecido <- coxph(formula_cox_FLL, data = df_cox_NN_fill)
 
 # ---------------------- GRAFICA DE COX -----------------------------
 # ----------------------- (sobre FGE) -------------------------------
@@ -730,27 +619,6 @@ g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
 
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_NN_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
-
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_NN_FGE <- survfit(modelo_cox_NN_FGE)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_NN_FGE, data = df_cox_NN_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre FGE",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE_NN_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
 
 # -------------------- (sobre Fallecido) ---------------------------
 
@@ -780,25 +648,8 @@ g <- g + ylim(c(-3, 3))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_NN_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
 
-# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
-
-# # Calcular las curvas de supervivencia ajustadas por Estado
-# surv_ajustado_tr_NN_Fallecido <- survfit(modelo_cox_NN_Fallecido)
-#
-# # Gráfico de las curvas ajustadas por Estado
-# g <- ggsurvplot(surv_ajustado_tr_NN_Fallecido, data = df_cox_NN_fill,
-#                 strata = "Estado",
-#                 pval = TRUE, conf.int = TRUE,
-#                 xlab = "Tiempo",
-#                 ylab = "Probabilidad de Supervivencia",
-#                 title = "Curvas de Supervivencia Ajustadas por Estado sobre Fallecimiento",
-#                 ggtheme = theme_minimal() +
-#                   theme(plot.background = element_rect(fill = "white", colour = "black"),
-#                         panel.background = element_rect(fill = "white", colour = "black"),
-#                         legend.background = element_rect(fill = "white", colour = "black"))
-# )
-#
-# print(g)
-# ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_NN_curv.png"), plot = g, width = 18, height = 9, dpi = 300)
+# ------------------- EXPORTAR -------------------
+print('------------------- EXPORTAR -------------------')
+write.csv(df_cox, paste0(baseurl, "data/df_Cox1.csv"), row.names = FALSE)
 
 print('================================= FIN MODELO DE COX =================================')
