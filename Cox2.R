@@ -20,10 +20,14 @@ df_cox <- read.csv(paste0(baseurl, "data/df_Cox1.csv"), sep = ",", header = TRUE
 
 # ------------------- Rellenado de Datos con MICE -------------------
 print('------------------- Rellenado de Datos con MICE -------------------')
-# computacionalmente imposible por ahora pero no estaria de mas la verdad
-
+# computacionalmente imposible por ahora pero no estaria de mas la verdad para ANALITIC como tal
+# ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_mi.csv"), sep = ",", header = TRUE)
+# ANALITIC$FFECCITA <- as.Date(ANALITIC$FFECCITA)
+# ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma)
+#
 # Aplica mice con el método 'cart'
 # mice_analitics <- mice(ANALITIC, m=3, method='cart', seed=123)
+
 
 # # CONFIGURACIÓN PARA PODER USAR VARIOS HILOS
 # # Detectar el número de núcleos lógicos

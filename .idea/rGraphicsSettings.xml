@@ -2,7 +2,7 @@
 <project version="4">
   <component name="RGraphicsSettings">
     <option name="darkMode" value="false" />
-    <option name="height" value="512" />
+    <option name="height" value="517" />
     <option name="imageNumber" value="1" />
     <option name="outputDirectory" value="$PROJECT_DIR$/../Graficas/KM" />
     <option name="resolution" value="75" />
