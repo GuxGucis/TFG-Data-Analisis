@@ -7,6 +7,7 @@ library(tidyr)
 library(mice)
 library(survminer)
 library(broom)
+library(parallel)
 
 # ------------------- CARGADO DE DATOS -------------------
 
@@ -50,26 +51,6 @@ print('------------------- Rellenado de Datos con MICE -------------------')
 # df_cox_5 <- complete(df_cox_mice, 5)
 # df_cox_6 <- complete(df_cox_mice, 6)
 # df_cox_7 <- complete(df_cox_mice, 7)
-#
-# # ¡¡¡¡ HACER ESTO A MANO CON CADA DATAFRAME GENERADO (ES MAS FACIL) !!!!
-#
-# df_cox_7 <- df_cox_7 %>%
-#   mutate(Estado = case_when(
-#     Hemodialisis == 1 & Transplante == 0 ~ "hemodialisis",
-#     Hemodialisis == 0 & Transplante == 1 ~ "transplante",
-#     Hemodialisis == 1 & Transplante == 1 ~ "ambas",
-#     Hemodialisis == 0 & Transplante == 0 ~ "nada"
-#   ))
-#
-# df_cox_7 <- df_cox_7 %>%
-#   relocate("Estado", .after = "edad_inicio")
-#
-# df_cox_7 <- df_cox_7 %>%
-#   select(-c(Hemodialisis, Transplante))
-#
-# df_cox_7 <- df_cox_7 %>%
-#   relocate("Fallecido", .after = "FGE")
-#
 #
 # write.csv(df_cox_1, paste0(baseurl, "Mice/tend_mice_1.csv"), row.names = FALSE)
 # write.csv(df_cox_2, paste0(baseurl, "Mice/tend_mice_2.csv"), row.names = FALSE)

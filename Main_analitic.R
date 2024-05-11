@@ -310,6 +310,6 @@ print('------------------- CORRELACIONES -------------------')
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')
 # write.csv(ANALITIC, "D:/gugui/Documentos/Universidad/TFG/NewANALITIC.csv", row.names = FALSE)
-write.csv(ANALITIC, paste0(baseurl, "data/ANALITIC_ma.csv"), row.names = FALSE)
+write.csv(ANALITIC, paste0(baseurl, "data/ANALITIC_1.csv"), row.names = FALSE)
 
 print('================================= FIN ANALITICAS =================================')

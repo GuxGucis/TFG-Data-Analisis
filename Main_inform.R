@@ -20,7 +20,7 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
 # ------------- DATOS -------------
 
-ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_ma.csv"), sep = ",", header = TRUE)
+ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_1.csv"), sep = ",", header = TRUE)
 
 EXCEL <- read_excel(paste0(baseurl, "Grupo/analiticas_filtradas.xlsx"))
 
@@ -165,9 +165,31 @@ ANALITIC <- ANALITIC %>%
 ANALITIC <- ANALITIC %>%
   arrange(ID, fechatoma)
 
+# ------------------- LIMPIEZA FINAL -------------------
+print('------------------- LIMPIEZA FINAL -------------------')
+
+ANALITIC <- ANALITIC %>%
+  select(-c(gidenpac, CENTRO, FFECCITA, GPRESTAC, descprestacion, FFallecido))
+
+ANALITIC$ITIPSEXO <- ifelse(ANALITIC$ITIPSEXO == "H", 0, 1) # 0 si es Hombre y 1 si es Mujer
+
+ANALITIC <- ANALITIC %>%
+  relocate("Cociente.Album.Creat", .after = "fechatoma")
+ANALITIC <- ANALITIC %>%
+  relocate("ITIPSEXO", .after = "fechatoma")
+ANALITIC <- ANALITIC %>%
+  relocate("FGE", .after = "ID")
+ANALITIC <- ANALITIC %>%
+  relocate("Hemodialisis", .after = "FGE")
+ANALITIC <- ANALITIC %>%
+  relocate("Transplante", .after = "Hemodialisis")
+ANALITIC <- ANALITIC %>%
+  relocate("Fallecido", .after = "Transplante")
+
+
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')
 
-write.csv(ANALITIC, paste0(baseurl, "data/ANALITIC_mi.csv"), row.names = FALSE)
+write.csv(ANALITIC, paste0(baseurl, "data/ANALITIC_2.csv"), row.names = FALSE)
 
 print('================================= FIN INFORMES =================================')

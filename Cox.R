@@ -32,8 +32,7 @@ print('------------------- PREPARACIÓN -------------------')
 
 # ------------- DATOS -------------
 
-ANALITIC <- data.frame(read.csv(paste0(baseurl, "data/ANALITIC_mi.csv"), sep = ",", header = TRUE))
-ANALITIC$FFECCITA <- as.Date(ANALITIC$FFECCITA)
+ANALITIC <- data.frame(read.csv(paste0(baseurl, "data/ANALITIC_2.csv"), sep = ",", header = TRUE))
 ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma)
 
 df_datos <- ANALITIC %>%
@@ -43,14 +42,21 @@ df_datos <- ANALITIC %>%
     # tendencia_FGE = if_else(last(FGE, na_rm = TRUE) < first(FGE, na_rm = TRUE), 1, 0), # 1 si ha descendido, 0 en caso contrario
     tiempo_total = as.integer(last(fechatoma) - first(fechatoma)), # Días totales
     edad_inicio = first(Edad), # Usar la primera Edad registrada por ID
+    Transplante = max(Transplante, na.rm = TRUE),
+    Hemodialisis = max(Hemodialisis, na.rm = TRUE),
+    Fallecido = max(Fallecido, na.rm = TRUE),
+    ITIPSEXO = max(ITIPSEXO, na.rm = TRUE),
     .groups = "drop" # Asegurar que el resultado final no esté agrupado
   )
+
+ANALITIC <- ANALITIC %>%
+  relocate("FGE", .after = "ITIPSEXO")
 
 # Inicializar una lista para almacenar los resultados de cada columna
 resultados <- list()
 
 # Columnas a excluir para calcular las tendencias
-indices <- setdiff(11:ncol(ANALITIC), match(c("Transplante", "Hemodialisis", "Fallecido"), names(ANALITIC)))
+indices <- 8:ncol(ANALITIC)
 
 for(i in indices) {
   # Obtener el nombre de la columna actual
@@ -78,17 +84,6 @@ for(i in indices) {
   resultados[[nombre_columna]] <- df_tendencia
 }
 
-# Adapatamos los datos extra que no se incluyen en ninguno de ambos apartados
-# Transplante, Hemodialisis y Fallecido
-df_transplante_hemodialisis <- ANALITIC %>%
-  group_by(ID) %>%
-  summarise(
-    Transplante = max(Transplante, na.rm = TRUE),
-    Hemodialisis = max(Hemodialisis, na.rm = TRUE),
-    Fallecido = max(Fallecido, na.rm = TRUE),
-    .groups = 'drop'
-  )
-
 # Unir todos los dataframes de tendencia por ID
 df_resultados <- reduce(resultados, full_join, by = "ID")
 df_cox <- left_join(df_datos, df_resultados, by = "ID") #Las columnas de resultados se unen a datos
@@ -96,10 +91,6 @@ df_cox <- left_join(df_datos, df_resultados, by = "ID") #Las columnas de resulta
 # REORDENAR PORQUE TOC (muevo FGE y cociente mas adelante)
 df_cox <- df_cox %>%
   relocate("FGE", .after = "edad_inicio")
-df_cox <- df_cox %>%
-  relocate("Cociente.Album.Creat", .after="FGE")
-
-df_cox <- left_join(df_cox, df_transplante_hemodialisis, by = "ID")
 
 # Columna Estado para crear los grupos de tratamientos importantes que han tenido
 df_cox <- df_cox %>%
@@ -125,9 +116,6 @@ df_cox <- df_cox %>%
 
 df_cox <- df_cox %>%
   relocate("Estado", .after = "edad_inicio")
-
-df_cox <- df_cox %>%
-  relocate("Fallecido", .after = "FGE")
 
 # ------------------- MODELO DE COX GENERAL -------------------
 print('------------------- MODELO DE COX GENERAL -------------------')

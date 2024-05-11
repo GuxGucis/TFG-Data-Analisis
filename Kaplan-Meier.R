@@ -13,6 +13,8 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 # ------------- PORTATIL -------------
 # baseurl <- "D:/Documentos/Universidad/TFG/"
 
+df_cox <- read.csv(paste0(baseurl, "data/df_Cox1.csv"), sep = ",", header = TRUE)
+
 # -------------------------------------------------------------------
 # ------------------------ PREPARACIÓN ------------------------------
 # -------------------------------------------------------------------

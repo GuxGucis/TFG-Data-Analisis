@@ -25,7 +25,7 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
 # ------------- DATOS -------------
 
-ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_mi.csv"), sep = ",", header = TRUE)
+ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_2.csv"), sep = ",", header = TRUE)
 
 # ------------------- Análisis previo -------------------
 print('------------------- Análisis previo -------------------')
