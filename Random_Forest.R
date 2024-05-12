@@ -82,21 +82,6 @@ vimp_results <- vimp(rf_fit_FGE)
 # Imprimir los resultados de importancia de las variables
 print(vimp_results)
 
-# # Convert the variable importance to a data frame for ggplot
-# vimp_data <- data.frame(Variable = names(vimp_results$importance),
-#                         Importance = vimp_results$importance)
-#
-# # Create the plot
-# g <- ggplot(vimp_data, aes(x = reorder(Variable, VIMP), y = VIMP)) +
-#   geom_bar(stat = "identity", fill = "steelblue") +
-#   theme_minimal() +
-#   labs(title = "Variable Importance in Random Forest Model",
-#        x = "Variables",
-#        y = "Importance") +
-#   coord_flip() # Flipping the coordinates for better readability of variable names
-#
-# print(g)
-
 # Especifica el nombre del archivo y la ruta donde quieres guardar el gráfico
 filename <- paste0(baseurl, "Graficas/Random_Forest/RM_FGE_ALL.png")
 # Abre el dispositivo PNG
@@ -104,11 +89,6 @@ png(filename, width = 1500, height = 1400)
 # Para visualizar los resultados puedes usar plot
 plot(vimp_results)
 dev.off()
-
-# filename <- paste0(baseurl, "Graficas/Random_Forest/RM_sur_FGE_ALL.png")
-# png(filename, width = 1500, height = 1400)
-# plot(rf_fit_FGE, type = "survival", time.inc = 6)
-# dev.off()
 
 # ----------------------- (sobre Fallecido) ------------------------------
 print('------------------- (sobre Fallecido) -------------------')

@@ -186,6 +186,48 @@ ANALITIC <- ANALITIC %>%
 ANALITIC <- ANALITIC %>%
   relocate("Fallecido", .after = "Transplante")
 
+# ------------------- GRAFICAS -------------------
+print('------------------- GRAFICAS -------------------')
+
+datos_ausentes <- sapply(ANALITIC, function(x) sum(is.na(x)))
+datos_ausentes_df <- data.frame(columna = names(datos_ausentes), ausentes = datos_ausentes)
+g <- ggplot(datos_ausentes_df, aes(x = reorder(columna, -ausentes), y = ausentes)) +
+  geom_bar(stat = "identity", fill="#69b3a2", color="#e9ecef") +
+  coord_flip() +
+  labs(title = "Datos Ausentes por Columna", x = "Variable", y = "Datos Ausentes")
+
+ggsave(paste0(baseurl, "Graficas/Cleaning/Ausentes.png"), plot = g, width = 18, height = 12, dpi = 300)
+
+# DATOS POR ESTADO
+condiciones <- list(
+  "Hemodialisis" = ANALITIC[ANALITIC$Hemodialisis == 1 & ANALITIC$Transplante == 0, ],
+  "Transplante" = ANALITIC[ANALITIC$Hemodialisis == 0 & ANALITIC$Transplante == 1, ],
+  "Ambas" = ANALITIC[ANALITIC$Hemodialisis == 1 & ANALITIC$Transplante == 1, ],
+  "Nada" = ANALITIC[ANALITIC$Hemodialisis == 0 & ANALITIC$Transplante == 0, ]
+)
+
+for (key in names(condiciones)) {
+  datos_condicion <- condiciones[[key]]
+  presentes <- colSums(!is.na(datos_condicion))
+  ausentes <- colSums(is.na(datos_condicion))
+
+  datos_grafica <- data.frame(
+    Columna = rep(names(presentes), 2),
+    Cantidad = c(presentes, ausentes),
+    Tipo = rep(c("Presentes", "Ausentes"), each = length(presentes))
+  )
+
+  g <- ggplot(datos_grafica, aes(x = reorder(Columna, -Cantidad), y = Cantidad, fill = Tipo)) +
+    geom_bar(stat = "identity", position = "stack") +
+    coord_flip() +
+    labs(title = paste("Datos Presentes y Ausentes:", key),
+         x = "Columnas",
+         y = "Cantidad de Datos") +
+    scale_fill_manual(values = c("steelblue", "tomato"))
+
+  ggsave(paste0(baseurl, "Graficas/Cleaning/", key, ".png"), plot = g, width = 18, height = 12, dpi = 300)
+}
+
 
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')

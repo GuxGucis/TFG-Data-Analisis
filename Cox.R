@@ -116,6 +116,8 @@ df_cox <- df_cox %>%
 
 df_cox <- df_cox %>%
   relocate("Estado", .after = "edad_inicio")
+df_cox <- df_cox %>%
+  relocate("edad_inicio", .after = "Fallecido")
 
 # ------------------- MODELO DE COX GENERAL -------------------
 print('------------------- MODELO DE COX GENERAL -------------------')
@@ -126,7 +128,7 @@ print('------------------- MODELO DE COX GENERAL -------------------')
 # ------------------------------------------------------------------
 
 # Preparar la fórmula del modelo de Cox incluyendo todas las columnas desde la 6ª en adelante como covariables
-covariables <- names(df_cox)[7:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
+covariables <- names(df_cox)[6:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
 
 # Imputar valores faltantes para las covariables numéricas con la media de cada columna
 # Asume que 'edad_inicio' y todas las covariables desde la 5ª columna hacia adelante son numéricas

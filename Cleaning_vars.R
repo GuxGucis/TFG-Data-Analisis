@@ -26,12 +26,14 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 # ------------- DATOS -------------
 
 ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_2.csv"), sep = ",", header = TRUE)
+significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
+importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", header = TRUE)
 
 # ------------------- Análisis previo -------------------
 print('------------------- Análisis previo -------------------')
+# ------------------- Significancia COX -------------------
+print('------------------- Significancia COX -------------------')
 
-# POR COLUMNA
-significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
 # Sumar total de no significancia por modelo
 modelo_frecuencias <- colSums(significancia[, -c(1, ncol(significancia))])
 
@@ -41,12 +43,12 @@ g <- ggplot(bar_data, aes(x = reorder(Modelo, Total), y = Total, fill = Total)) 
   geom_bar(stat = "identity") +
   scale_fill_viridis_c() +
   coord_flip() +
-  labs(x = "Modelo", y = "Total de No Significativa", title = "Frecuencia de No Significancia por Modelo") +
+  labs(x = "Modelo", y = "Total de No Significativa", title = "Frecuencia de la No Significancia por Modelo") +
   theme_minimal() +
   theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Colum.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Colum_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # POR FILA
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
@@ -62,12 +64,12 @@ g <- ggplot(significancia, aes(x = reorder(variable, total_no_significativa), y 
   geom_bar(stat = "identity") +
   scale_fill_viridis_c() +
   coord_flip() +
-  labs(x = "Variable", y = "Total de No Significativa", title = "Frecuencia Total de No Significancia por Variable") +
+  labs(x = "Variable", y = "Total de No Significativa", title = "Frecuencia Total de la No Significancia por Variable") +
   theme_minimal() +
   theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Fila.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Fila_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # EN HEATMAP
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
@@ -89,14 +91,14 @@ g <- ggplot(long_data, aes(x = modelo, y = variable, fill = conteo)) +
     plot.background = element_rect(fill = "white", colour = "black")
   ) +
   labs(
-    title = 'Heatmap de No Significancia por Modelo',
+    title = 'Heatmap de la No Significancia por Modelo',
     x = 'Modelo',
     y = 'Variable',
     fill = 'Conteo de No Significancia'
   )
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # DESVIACIÓN ESTANDAR
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
@@ -109,12 +111,68 @@ g <- ggplot(var_data, aes(x = reorder(Modelo, SD), y = SD, fill = SD)) +
   geom_bar(stat = "identity") +
   scale_fill_viridis_c() +
   coord_flip() +
-  labs(x = "Modelo", y = "Desviacion Estandar", title = "Desviacion Estandar de No Significativa por Modelo") +
+  labs(x = "Modelo", y = "Desviacion Estandar", title = "Desviacion Estandar de la No Significativa por Modelo") +
   theme_minimal() +
   theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/Desviacion_Estandar.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/Desviacion_Estandar_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
+# ------------------- Importancia RF -------------------
+print('------------------- Importancia RM -------------------')
+
+# EN HEATMAP
+importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", header = TRUE)
+# Convertir los datos a formato largo
+long_data <- pivot_longer(importance,
+                          cols = -Variable,
+                          names_to = 'modelo',
+                          values_to = 'importancia')
+
+# Crear el heatmap
+g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importancia)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "D") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+    axis.text.y = element_text(size = 5),
+    panel.background = element_rect(fill = "white", colour = "black"),
+    plot.background = element_rect(fill = "white", colour = "black")
+  ) +
+  labs(
+    title = 'Heatmap de la Importancia por Modelo',
+    x = 'Modelo',
+    y = 'Variable',
+    fill = 'Importancia'
+  )
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, width = 10, height = 12, dpi = 300)
+
+# ------------------- LIMPIAMOS -------------------
+print('------------------- LIMPIAMOS -------------------')
+
+# En base a los multiples modelos de cox y random forest, se puede ver (probablemente por una suma de los escasos datos que hay de dichos casos)
+# que los modelos donde solo se ha hecho transplante o transplante y hemodialisis no son lo suficiente para extraer ningun resultado, en su mayoria dan modelos
+# sin importancia y significancia (probablement porque no hay datos sufucientes)
+# Para los restantes modelos si parece hacer datos suficientes, por lo que seguimos con esos
+# En cuanto a las variables (se ve mas claramente en la significancia), vemos que hay datos que por muchas variante de imputacion ques haga no parece tener significancia
+# en el modelo (aunque podría ser por la ausencia de datos), pero que aun asi, solo hace ruido al modelo, Por lo que discriminamos si la media de significancias de los modelos restantes es igual o mayor a 5
+
+# Quitamos los modelos
+ANALITIC_filt <- ANALITIC %>%
+  filter(!(Transplante == 1 & Hemodialisis == 0)) %>%
+  filter(!(Transplante == 1 & Hemodialisis == 1))
+
+# Calcular la media de no significancias
+significancia <- significancia %>%
+  mutate(mean_nonsignificance = rowMeans(select(., count_hm_FGE, count_hm_FLL, count_NN_FGE, count_hm_FLL)))
+
+# Encontrar nombres de columnas cuya media de no significancias sea 5 o mayor
+columns_to_remove <- names(significancia)[significancia$mean_nonsignificance >= 5]
+
+# Eliminar las columnas del DataFrame principal
+ANALITIC_clean <- select(ANALITIC_filt, -all_of(columns_to_remove))
 
 print('================================= FIN Limpieza de Variables =================================')

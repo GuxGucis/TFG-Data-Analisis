@@ -76,7 +76,7 @@ df_cox_6 <- read.csv(paste0(baseurl, "Mice/tend_mice_6.csv"), sep = ",", header 
 df_cox_7 <- read.csv(paste0(baseurl, "Mice/tend_mice_7.csv"), sep = ",", header = TRUE)
 
 # Variable para poder ver como se lleva la significancia en los modelos y así descartar modelos
-significancia <- data.frame(variable = names(df_cox)[7:ncol(df_cox)])
+significancia <- data.frame(variable = names(df_cox)[6:ncol(df_cox)])
 significancia$count_all_FGE <- 0
 significancia$count_all_FLL <- 0
 significancia$count_hm_FGE <- 0
@@ -96,7 +96,8 @@ for (i in mice){
   df_nombre <- paste0("df_cox_", i)
 
   df_cox <- get(df_nombre)
-
+  df_cox <- df_cox %>%
+    relocate("edad_inicio", .after = "Fallecido")
   # ------------------- MODELO DE COX GENERAL -------------------
   print('------------------- MODELO DE COX GENERAL -------------------')
 
@@ -107,7 +108,7 @@ for (i in mice){
 
   # Preparar la fórmula del modelo de Cox incluyendo todas las columnas desde la 5ª en adelante como covariables
   # Hay que excluir FGE y Fallecimiento porque si no se ralla y al evaluar en el modelo la propia variable que sirve de evento
-  covariables <- names(df_cox)[7:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 5ª posición
+  covariables <- names(df_cox)[6:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 5ª posición
 
   df_cox$Estado <- as.factor(df_cox$Estado)
   formula_cox_FGE <- as.formula(paste("Surv(tiempo_total, FGE) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
