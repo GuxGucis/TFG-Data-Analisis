@@ -119,7 +119,11 @@ print('------------------- (sobre Fallecido) -------------------')
 formula_Fallecido <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ ", paste(covariables, collapse = " + ")))
 
 # Ajusta el modelo de Random Forest
-rf_fit_FLL <- rfsrc(formula_Fallecido, data = df_rf, ntree = 50, na.action = "na.impute")
+rf_fit_FLL <- rfsrc(formula_Fallecido, data = df_rf,
+                    forest = TRUE,
+                    importance = TRUE,
+                    tree.err = TRUE,
+                    ntree = 50, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL)
@@ -178,7 +182,11 @@ df_rf_hm <- df_rf %>%
 covariables <- names(df_rf_hm)[8:ncol(df_rf_hm)]
 
 # Ajusta el modelo de Random Forest
-rf_fit_FGE_hm <- rfsrc(formula_FGE, data = df_rf_hm, ntree = 50, na.action = "na.impute")
+rf_fit_FGE_hm <- rfsrc(formula_FGE, data = df_rf_hm,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 50, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FGE_hm)
@@ -231,7 +239,11 @@ dev.off()
 print('------------------- (sobre Fallecido) -------------------')
 
 # Ajusta el modelo de Random Forest
-rf_fit_FLL_hm <- rfsrc(formula_Fallecido, data = df_rf_hm, ntree = 50, na.action = "na.impute")
+rf_fit_FLL_hm <- rfsrc(formula_Fallecido, data = df_rf_hm,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 30, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL_hm)
@@ -290,7 +302,11 @@ df_rf_tr <- df_rf %>%
 covariables <- names(df_rf_tr)[8:ncol(df_rf_tr)]
 
 # Ajusta el modelo de Random Forest
-rf_fit_FGE_tr <- rfsrc(formula_FGE, data = df_rf_tr, ntree = 50, na.action = "na.impute")
+rf_fit_FGE_tr <- rfsrc(formula_FGE, data = df_rf_tr,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 100, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FGE_tr)
@@ -343,7 +359,11 @@ dev.off()
 print('------------------- (sobre Fallecido) -------------------')
 
 # Ajusta el modelo de Random Forest
-rf_fit_FLL_tr <- rfsrc(formula_Fallecido, data = df_rf_tr, ntree = 50, na.action = "na.impute")
+rf_fit_FLL_tr <- rfsrc(formula_Fallecido, data = df_rf_tr,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 100, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL_tr)
@@ -402,7 +422,11 @@ df_rf_hmtr <- df_rf %>%
 covariables <- names(df_rf_hmtr)[8:ncol(df_rf_hmtr)]
 
 # Ajusta el modelo de Random Forest
-rf_fit_FGE_hmtr <- rfsrc(formula_FGE, data = df_rf_hmtr, ntree = 50, na.action = "na.impute")
+rf_fit_FGE_hmtr <- rfsrc(formula_FGE, data = df_rf_hmtr,
+                         forest = TRUE,
+                         importance = TRUE,
+                         tree.err = TRUE,
+                         ntree = 100, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FGE_hmtr)
@@ -454,7 +478,11 @@ dev.off()
 print('------------------- (sobre Fallecido) -------------------')
 
 # Ajusta el modelo de Random Forest
-rf_fit_FLL_hmtr <- rfsrc(formula_Fallecido, data = df_rf_hmtr, ntree = 50, na.action = "na.impute")
+rf_fit_FLL_hmtr <- rfsrc(formula_Fallecido, data = df_rf_hmtr,
+                         forest = TRUE,
+                         importance = TRUE,
+                         tree.err = TRUE,
+                         ntree = 100, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL_hmtr)
@@ -513,7 +541,11 @@ df_rf_nn <- df_rf %>%
 covariables <- names(df_rf_nn)[8:ncol(df_rf_nn)]
 
 # Ajusta el modelo de Random Forest
-rf_fit_FGE_nn <- rfsrc(formula_FGE, data = df_rf_nn, ntree = 50, na.action = "na.impute")
+rf_fit_FGE_nn <- rfsrc(formula_FGE, data = df_rf_nn,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 50, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FGE_nn)
@@ -565,7 +597,11 @@ dev.off()
 print('------------------- (sobre Fallecido) -------------------')
 
 # Ajusta el modelo de Random Forest
-rf_fit_FLL_nn <- rfsrc(formula_Fallecido, data = df_rf_nn, ntree = 50, na.action = "na.impute")
+rf_fit_FLL_nn <- rfsrc(formula_Fallecido, data = df_rf_nn,
+                       forest = TRUE,
+                       importance = TRUE,
+                       tree.err = TRUE,
+                       ntree = 50, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL_nn)

@@ -10,6 +10,7 @@ library(reshape2)
 library(broom)
 library(tidyverse)
 library(lme4)
+library(mice)
 library(readxl)
 library(stringr)
 library(parallel)
@@ -119,7 +120,7 @@ print(g)
 ggsave(paste0(baseurl, "Graficas/Cleaning/Desviacion_Estandar_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # ------------------- Importancia RF -------------------
-print('------------------- Importancia RM -------------------')
+print('------------------- Importancia RF -------------------')
 
 # EN HEATMAP
 importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", header = TRUE)
@@ -150,6 +151,38 @@ g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importancia)) +
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
+# ------------------- Importancia RF FULL -------------------
+print('------------------- Importancia RF FULL-------------------')
+# ------------------PROBAR CUANDO ACABE MICE--------------------------------------
+# EN HEATMAP
+importance <- read.csv(paste0(baseurl, "data/importancia_ANALITICS.csv"), sep = ",", header = TRUE)
+# Convertir los datos a formato largo
+long_data <- pivot_longer(importance,
+                          cols = -Variable,
+                          names_to = 'modelo',
+                          values_to = 'importancia')
+
+# Crear el heatmap
+g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importancia)) +
+  geom_tile() +
+  scale_fill_viridis_c(option = "D") +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, vjust = 1, hjust=1),
+    axis.text.y = element_text(size = 5),
+    panel.background = element_rect(fill = "white", colour = "black"),
+    plot.background = element_rect(fill = "white", colour = "black")
+  ) +
+  labs(
+    title = 'Heatmap de la Importancia por Modelo DE LOS ANALITICS COMPLETO',
+    x = 'Modelo',
+    y = 'Variable',
+    fill = 'Importancia'
+  )
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, width = 10, height = 12, dpi = 300)
+
 # ------------------- LIMPIAMOS -------------------
 print('------------------- LIMPIAMOS -------------------')
 
@@ -165,14 +198,94 @@ ANALITIC_filt <- ANALITIC %>%
   filter(!(Transplante == 1 & Hemodialisis == 0)) %>%
   filter(!(Transplante == 1 & Hemodialisis == 1))
 
-# Calcular la media de no significancias
 significancia <- significancia %>%
-  mutate(mean_nonsignificance = rowMeans(select(., count_hm_FGE, count_hm_FLL, count_NN_FGE, count_hm_FLL)))
+  select(-c(count_tr_FGE, count_tr_FLL, count_tr_hm_FGE, count_tr_hm_FLL))
+
+# Calcular la media de no significancias
+significancia$Media <- rowMeans(significancia[ , -which(names(significancia) == "variable")], na.rm = TRUE)
 
 # Encontrar nombres de columnas cuya media de no significancias sea 5 o mayor
-columns_to_remove <- names(significancia)[significancia$mean_nonsignificance >= 5]
+columns_to_remove <- significancia$variable[significancia$Media >= 5]
 
 # Eliminar las columnas del DataFrame principal
-ANALITIC_clean <- select(ANALITIC_filt, -all_of(columns_to_remove))
+ANALITIC_clean <- ANALITIC_filt[ , !(names(ANALITIC_filt) %in% columns_to_remove)]
+
+# ------------------- NEW DATA STATUS -------------------
+print('------------------- NEW DATA STATUS -------------------')
+
+datos_ausentes <- sapply(ANALITIC_clean, function(x) sum(is.na(x)))
+datos_ausentes_df <- data.frame(columna = names(datos_ausentes), ausentes = datos_ausentes)
+g <- ggplot(datos_ausentes_df, aes(x = reorder(columna, -ausentes), y = ausentes)) +
+  geom_bar(stat = "identity", fill="#69b3a2", color="#e9ecef") +
+  coord_flip() +
+  labs(title = "Datos Ausentes por Columna después de limpieza", x = "Variable", y = "Datos Ausentes")
+
+ggsave(paste0(baseurl, "Graficas/Cleaning/Ausentes_Postclean.png"), plot = g, width = 18, height = 12, dpi = 300)
+
+# DATOS POR ESTADO
+condiciones <- list(
+  "Hemodialisis" = ANALITIC_clean[ANALITIC_clean$Hemodialisis == 1 & ANALITIC_clean$Transplante == 0, ],
+  "Nada" = ANALITIC_clean[ANALITIC_clean$Hemodialisis == 0 & ANALITIC_clean$Transplante == 0, ]
+)
+
+for (key in names(condiciones)) {
+  datos_condicion <- condiciones[[key]]
+  presentes <- colSums(!is.na(datos_condicion))
+  ausentes <- colSums(is.na(datos_condicion))
+
+  datos_grafica <- data.frame(
+    Columna = rep(names(presentes), 2),
+    Cantidad = c(presentes, ausentes),
+    Tipo = rep(c("Presentes", "Ausentes"), each = length(presentes))
+  )
+
+  g <- ggplot(datos_grafica, aes(x = reorder(Columna, -Cantidad), y = Cantidad, fill = Tipo)) +
+    geom_bar(stat = "identity", position = "stack") +
+    coord_flip() +
+    labs(title = paste("Datos Presentes y Ausentes después de limpieza:", key),
+         x = "Columnas",
+         y = "Cantidad de Datos") +
+    scale_fill_manual(values = c("steelblue", "tomato"))
+
+  ggsave(paste0(baseurl, "Graficas/Cleaning/", key, "_Postclean.png"), plot = g, width = 18, height = 12, dpi = 300)
+}
+
+# ------------------- Rellenado de Datos con MICE -------------------
+print('------------------- Rellenado de Datos con MICE -------------------')
+
+# CONFIGURACIÓN PARA PODER USAR VARIOS HILOS
+# Detectar el número de núcleos lógicos
+num_cores <- detectCores(logical = TRUE)
+
+# Crear un clúster con un núcleo menos que el total para dejar recursos para el sistema
+cl <- makeCluster(num_cores - 2)
+
+# Usar el clúster para paralelizar mice
+ANALITIC_mice <- mice(ANALITIC_clean, m=7, method='cart', seed=123, parallel = "snow", maxit=7, cluster=cl)
+
+# Detener el clúster una vez completada la imputación
+stopCluster(cl)
+
+# Selecciona un conjunto imputado
+ANALITIC_1 <- complete(ANALITIC_mice, 1)
+ANALITIC_2 <- complete(ANALITIC_mice, 2)
+ANALITIC_3 <- complete(ANALITIC_mice, 3)
+ANALITIC_4 <- complete(ANALITIC_mice, 4)
+ANALITIC_5 <- complete(ANALITIC_mice, 5)
+ANALITIC_6 <- complete(ANALITIC_mice, 6)
+ANALITIC_7 <- complete(ANALITIC_mice, 7)
+
+# ------------------- EXPORTAR -------------------
+print('------------------- EXPORTAR -------------------')
+
+write.csv(ANALITIC_1, paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), row.names = FALSE)
+write.csv(ANALITIC_2, paste0(baseurl, "Mice/ANALITIC_mice_2.csv"), row.names = FALSE)
+write.csv(ANALITIC_3, paste0(baseurl, "Mice/ANALITIC_mice_3.csv"), row.names = FALSE)
+write.csv(ANALITIC_4, paste0(baseurl, "Mice/ANALITIC_mice_4.csv"), row.names = FALSE)
+write.csv(ANALITIC_5, paste0(baseurl, "Mice/ANALITIC_mice_5.csv"), row.names = FALSE)
+write.csv(ANALITIC_6, paste0(baseurl, "Mice/ANALITIC_mice_6.csv"), row.names = FALSE)
+write.csv(ANALITIC_7, paste0(baseurl, "Mice/ANALITIC_mice_7.csv"), row.names = FALSE)
+
+write.csv(ANALITIC_clean, paste0(baseurl, "data/ANALITIC_clean.csv"), row.names = FALSE)
 
 print('================================= FIN Limpieza de Variables =================================')
