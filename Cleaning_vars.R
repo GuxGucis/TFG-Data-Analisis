@@ -181,7 +181,7 @@ g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importancia)) +
   )
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia_full.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # ------------------- LIMPIAMOS -------------------
 print('------------------- LIMPIAMOS -------------------')

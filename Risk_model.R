@@ -1,6 +1,5 @@
 print('================================= RISK =================================')
 
-install.packages("cmprsk")
 library(cmprsk)
 
 library(survival)
@@ -17,6 +16,18 @@ library(readxl)
 library(stringr)
 library(parallel)
 
+# ------------------- CARGADO DE DATOS -------------------
+
+# ------------- TORRE -------------
+baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
+
+# ------------- PORTATIL -------------
+# baseurl <- "D:/Documentos/Universidad/TFG/"
+
+# ------------- DATOS -------------
+
+ANALITIC <- read.csv(paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), sep = ",", header = TRUE)
+
 # ------------------- PREPARACIÓN -------------
 print('------------------- PREPARACIÓN -------------------')
 
@@ -31,6 +42,7 @@ ANALITIC <- ANALITIC %>%
   select(-c(Hemodialisis, Transplante))
 ANALITIC <- ANALITIC %>%
   relocate("Estado", .after = "FGE")
+ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma)
 
 ANALITIC <- ANALITIC %>%
   arrange(ID, fechatoma) %>%
@@ -71,10 +83,13 @@ print('------------------- JOINT MODEL ALL-------------------')
 # ----------------------- (sobre FGE) ------------------------------
 print('------------------- (sobre FGE) -------------------')
 
-covariables <- names(ANALITIC)[10:ncol(ANALITIC)] #(Uno mas por lo dias_acumulado)
-covariates <- as.formula(paste(paste(covariables, collapse = " + ")))
+covariables <- names(ANALITIC)[10:ncol(ANALITIC)]  # Select the appropriate columns as covariates
+covariate_formula <- as.formula(paste("~", paste(covariables, collapse = " + ")))  # Create a formula
 
-cumincFit <- cuminc(time = ANALITIC$dias_acumulados, status = ANALITIC$FGE_microten, x = model.matrix(covariates, data = ANALITIC))
+# Now generate the model matrix
+covariate_matrix <- model.matrix(~ covariables - 1, data = ANALITIC)  # -1 to omit intercept
+
+crrFit <- crr(ftime = ANALITIC$dias_acumulados, fstatus = ANALITIC$FGE_microten, cov1 = covariate_matrix)
 summary(cumincFit)
 
 # Plot the predicted survival curve

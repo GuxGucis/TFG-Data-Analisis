@@ -1,224 +1,61 @@
-print('================================= MODELOS CONJUNTOS =================================')
-
-install.packages("JM")
-library(JM)
-
+# Ensure necessary libraries are loaded
 library(survival)
+library(JM)
+library(MASS)
+library(nlme)
 library(dplyr)
-library(tidyr)
-library(survminer)
-library(ggplot2)
-library(viridis)
-library(reshape2)
-library(broom)
-library(tidyverse)
-library(lme4)
-library(readxl)
-library(stringr)
-library(parallel)
 
-# ------------------- CARGADO DE DATOS -------------------
-
-# ------------- TORRE -------------
 baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
-# ------------- PORTATIL -------------
-# baseurl <- "D:/Documentos/Universidad/TFG/"
+# Load the data
+data <- read.csv(paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), sep = ",", header = TRUE)
 
-# ------------- DATOS -------------
+# Convert 'fechatoma' to Date
+data$fechatoma <- as.Date(data$fechatoma, format="%Y-%m-%d")
 
-ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_clean.csv"), sep = ",", header = TRUE)
-
-# ------------------- PREPARACIÓN -------------
-print('------------------- PREPARACIÓN -------------------')
-
-ANALITIC <- ANALITIC %>%
+# Data preprocessing
+data <- data %>%
+  group_by(ID) %>%
+  arrange(fechatoma) %>%
+  mutate(OrdenFecha = row_number() - 1,
+         tiempo_total = as.integer(last(fechatoma) - first(fechatoma))) %>%
+  ungroup() %>%
   mutate(Estado = case_when(
     Hemodialisis == 1 & Transplante == 0 ~ "hemodialisis",
-    Hemodialisis == 0 & Transplante == 1 ~ "transplante", #No deberia haber de estas
-    Hemodialisis == 1 & Transplante == 1 ~ "ambas", #No deberia haber de estas
+    Hemodialisis == 0 & Transplante == 1 ~ "transplante",
+    Hemodialisis == 1 & Transplante == 1 ~ "ambas",
     Hemodialisis == 0 & Transplante == 0 ~ "nada"
   ))
-ANALITIC <- ANALITIC %>%
-  select(-c(Hemodialisis, Transplante))
-ANALITIC <- ANALITIC %>%
-  relocate("Estado", .after = "FGE")
 
-ANALITIC <- ANALITIC %>%
-  arrange(ID, fechatoma) %>%
-  group_by(ID) %>%
-  mutate(dias_transcurridos = round(as.numeric(difftime(fechatoma, lag(fechatoma, default = first(fechatoma)), units = "days")))) %>%
-  ungroup()
+# Identify subjects present in both datasets
+ids_longitudinal <- unique(data$ID)
+ids_survival <- unique(data$ID[data$tiempo_total > 0 & !is.na(data$Fallecido)])
 
-ANALITIC <- ANALITIC %>%
-  arrange(ID, fechatoma) %>%
-  group_by(ID) %>%
-  mutate(dias_acumulados = fechatoma - first(fechatoma)) %>%
-  ungroup()
+common_ids <- intersect(ids_longitudinal, ids_survival)
 
-ANALITIC <- ANALITIC %>%
-  arrange(ID, fechatoma) %>%
-  group_by(ID) %>%
-  mutate(tiempo_total = as.integer(last(fechatoma) - first(fechatoma))) %>%
-  ungroup()
+# Filter the data to include only common IDs
+data <- data %>% filter(ID %in% common_ids)
 
-ANALITIC <- ANALITIC %>%
-  relocate("dias_transcurridos", .after = "fechatoma")
-ANALITIC <- ANALITIC %>%
-  relocate("dias_acumulados", .after = "dias_transcurridos")
-ANALITIC <- ANALITIC %>%
-  relocate("tiempo_total", .after = "dias_acumulados")
-ANALITIC <- ANALITIC %>%
-  relocate("Edad", .after = "tiempo_total")
+# Fit the longitudinal submodel
+lme_fit <- lme(FGE ~ OrdenFecha, random = ~ OrdenFecha | ID, data = data)
+summary(lme_fit)
 
-ANALITIC <- ANALITIC %>%
-  arrange(ID, fechatoma) %>%
-  group_by(ID) %>%
-  mutate(FGE_microten = as.integer(lag(FGE, default = first(FGE)) > FGE)) # 1 si el FGE desciende y 0 si asciende o se mantiene igual
-ANALITIC <- ANALITIC %>%
-  relocate("FGE_microten", .after = "FGE")
-
-# ------------------- JOINT MODEL ALL -------------------
-print('------------------- JOINT MODEL ALL-------------------')
-# ----------------------- (sobre FGE) ------------------------------
-print('------------------- (sobre FGE) -------------------')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(FGE ~ dias_transcurridos, random = ~ dias_transcurridos | ID, data = ANALITIC)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-covariables <- names(ANALITIC)[10:ncol(ANALITIC)] #(Dos mas por lo dias_acumulado y tiempo total)
-formula_FGE <- as.formula(paste("Surv(dias_acumulados, FGE_microten) ~ ", paste(covariables, collapse = " + ")))
-coxFit <- coxph(formula_FGE, data = ANALITIC, x = TRUE)
+# Fit the survival submodel
+surv_fit <- coxph(Surv(tiempo_total, Fallecido) ~ Estado + cluster(ID), data = data, x = TRUE)
+summary(surv_fit)
 
 # Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
+joint_fit <- jointModel(lme_fit, surv_fit, timeVar = "OrdenFecha", method = "Cox-PH-GH")
+summary(joint_fit)
 
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
 
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FGE_ALL.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve FGE para todos los casos")
-dev.off()
-
-# ----------------------- (sobre Fallecido) ------------------------------
-print('------------------- (sobre Fallecido) -------------------')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(FGE ~ dias_transcurridos, random = ~ dias_transcurridos | ID, data = ANALITIC)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-formula_FLL <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ ", paste(covariables, collapse = " + ")))
-coxFit <- coxph(formula_FLL, data = ANALITIC, x = TRUE)
-
-# Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
-
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
-
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FLL_ALL.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve Fallecido para todos los casos")
-dev.off()
-
-# ------------------- JOINT MODEL HEMODIALISIS -------------------
-print('------------------- JOINT MODEL HEMODIALISIS-------------------')
-# ----------------------- (sobre FGE) ------------------------------
-print('------------------- (sobre FGE) -------------------')
-
-ANALITIC_hm <- ANALITIC %>%
-  filter(Estado == 'hemodialisis')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(FGE ~ dias_transcurridos, random = ~ dias_transcurridos | ID, data = ANALITIC_hm)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-formula_FGE <- as.formula(paste("Surv(dias_acumulados, FGE_microten) ~ ", paste(covariables, collapse = " + ")))
-coxFit <- coxph(formula_FGE, data = ANALITIC_hm, x = TRUE)
-
-# Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
-
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
-
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FGE_HM.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve FGE para Hemosdiálisis")
-dev.off()
-
-# ----------------------- (sobre Fallecido) ------------------------------
-print('------------------- (sobre Fallecido) -------------------')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(Fallecido ~ tiempo_total, random = ~ tiempo_total | ID, data = ANALITIC_hm)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-coxFit <- coxph(formula_FLL, data = ANALITIC_hm, x = TRUE)
-
-# Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
-
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
-
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FLL_HM.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve Fallecido para Hemodiálisis")
-dev.off()
-
-# ------------------- JOINT MODEL NADA -------------------
-print('------------------- JOINT MODEL NADA-------------------')
-# ----------------------- (sobre FGE) ------------------------------
-print('------------------- (sobre FGE) -------------------')
-
-ANALITIC_nn <- ANALITIC %>%
-  filter(Estado == 'nada')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(FGE ~ dias_transcurridos, random = ~ dias_transcurridos | ID, data = ANALITIC_nn)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-formula_FGE <- as.formula(paste("Surv(dias_acumulados, FGE_microten) ~ ", paste(covariables, collapse = " + ")))
-coxFit <- coxph(formula_FGE, data = ANALITIC_nn, x = TRUE)
-
-# Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
-
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
-
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FGE_NN.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve FGE sin Hemodiálisis ni transplante")
-dev.off()
-
-# ----------------------- (sobre Fallecido) ------------------------------
-print('------------------- (sobre Fallecido) -------------------')
-
-# Fit a linear mixed-effects model (for the longitudinal process)
-lmeFit <- lme(Fallecido ~ tiempo_total, random = ~ tiempo_total | ID, data = ANALITIC_nn)
-
-# Fit a Cox model (for the survival process) incorporating the linear mixed-effects model
-coxFit <- coxph(formula_FLL, data = ANALITIC_nn, x = TRUE)
-
-# Fit the joint model
-jointFit <- jointModel(lmeFit, coxFit, timeVar = "dias_transcurridos")
-summary(jointFit)
-
-# Predict survival using survfitJM
-survPred <- survfitJM(jointFit)
-
-# Plot the predicted survival curve
-png(paste0(baseurl, "Graficas/JM/JM_SurvCurv_FLL_NN.png"), width = 2000, height = 2000)
-plot(survPred, xlab = "Time", ylab = "Survival Probability", main = "Predicted Survival Curve Fallecido sin Hemodiálisis ni transplante")
-dev.off()
-
-print('================================= FIN MODELOS CONJUNTOS =================================')
+# Select relevant columns for the survival analysis
+survival_data <- data[, c("ID", "fechatoma", "Event1", "Fallecido", "Hemodialisis", "Transplante", "Edad",
+                          "Cociente.Album.Creat", "Porcbasofilos", "Porclinfocitos", "Porcmonocitos",
+                          "Acido.Folico", "ALAT.GPT", "Albumina", "Bilirrubina.directa", "Bilirrubina.total",
+                          "Calcio", "CHCM", "Cifra.de.Plaquetas", "CO2.suero", "Colesterol.de.LDL.Formula.de.Friedewald",
+                          "Creatinina", "Creatinina.orina", "Densidad", "Fosfatasa.alcalina", "Gamma.GT",
+                          "HDL.Colesterol", "Hemoglobina.A1c", "LDH", "Linfocitos.V.Absoluto", "Monocitos.V.Absoluto",
+                          "Parathormona.Intacta", "Peso", "Potasio", "Potasio.en.orina", "Proteina.C.reactiva",
+                          "Proteinas.totales", "Sodio.orina", "T4.libre", "Talla", "Temperatura.Axilar", "TSH",
+                          "Vitamina.B12", "Volumen.plaquetar.medio")]

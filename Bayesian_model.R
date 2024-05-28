@@ -1,8 +1,6 @@
 print('================================= BAYESIANO =================================')
 
-install.packages("rstanarm")
 library(rstanarm)
-
 library(survival)
 library(dplyr)
 library(tidyr)
@@ -16,6 +14,18 @@ library(lme4)
 library(readxl)
 library(stringr)
 library(parallel)
+
+# ------------------- CARGADO DE DATOS -------------------
+
+# ------------- TORRE -------------
+baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
+
+# ------------- PORTATIL -------------
+# baseurl <- "D:/Documentos/Universidad/TFG/"
+
+# ------------- DATOS -------------
+
+ANALITIC <- read.csv(paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), sep = ",", header = TRUE)
 
 # ------------------- PREPARACIÓN -------------
 print('------------------- PREPARACIÓN -------------------')
@@ -31,6 +41,7 @@ ANALITIC <- ANALITIC %>%
   select(-c(Hemodialisis, Transplante))
 ANALITIC <- ANALITIC %>%
   relocate("Estado", .after = "FGE")
+ANALITIC$fechatoma <- as.Date(ANALITIC$fechatoma)
 
 ANALITIC <- ANALITIC %>%
   arrange(ID, fechatoma) %>%
