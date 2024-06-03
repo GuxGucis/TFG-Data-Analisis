@@ -84,7 +84,7 @@ plt.title('Importancia de las Variables')
 plt.xlabel('Coeficiente')
 plt.ylabel('Variable')
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/importancia_variables.png')
+plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_importancia_variables.png')
 plt.show()
 
 # CURVAS DE SUPERVIVICENCIA POR HEMIADÍALISIS
@@ -118,7 +118,7 @@ plt.xlabel('Tiempo')
 plt.ylabel('Probabilidad de Supervivencia')
 plt.legend()
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/Surv_HM.png')
+plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_Surv_HM.png')
 plt.show()
 
 # CURVAS DE SUPERVIVICENCIA POR GRUPOS DE EDAD
@@ -142,7 +142,7 @@ plt.xlabel('Tiempo')
 plt.ylabel('Probabilidad de Supervivencia')
 plt.legend()
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/Surv_edad.png')
+plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_Surv_edad.png')
 plt.show()
 
 print('fin')

@@ -10,52 +10,97 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 # Load the data
 data <- read.csv(paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), sep = ",", header = TRUE)
 
-# Convert 'fechatoma' to Date
-data$fechatoma <- as.Date(data$fechatoma, format="%Y-%m-%d")
+# Convertir fechatoma a formato Date
+data$fechatoma <- as.Date(data$fechatoma)
 
-# Data preprocessing
 data <- data %>%
+  arrange(ID, fechatoma) %>%
   group_by(ID) %>%
-  arrange(fechatoma) %>%
-  mutate(OrdenFecha = row_number() - 1,
-         tiempo_total = as.integer(last(fechatoma) - first(fechatoma))) %>%
-  ungroup() %>%
-  mutate(Estado = case_when(
-    Hemodialisis == 1 & Transplante == 0 ~ "hemodialisis",
-    Hemodialisis == 0 & Transplante == 1 ~ "transplante",
-    Hemodialisis == 1 & Transplante == 1 ~ "ambas",
-    Hemodialisis == 0 & Transplante == 0 ~ "nada"
-  ))
+  mutate(tiempo_total = as.integer(last(fechatoma) - first(fechatoma))) %>% # Días totales
+  mutate(dias_transcurridos = round(as.numeric(difftime(fechatoma, lag(fechatoma, default = first(fechatoma)), units = "days")))) %>%
+  mutate(FGE_microten = as.integer(lag(FGE, default = first(FGE)) > FGE)) %>% # 1 si el FGE desciende y 0 si asciende o se mantiene igual
+  ungroup()
 
-# Identify subjects present in both datasets
+data <- data %>%
+  relocate("FGE_microten", .after = "FGE")
+data <- data %>%
+  relocate("Edad", .after = "fechatoma")
+data <- data %>%
+  relocate("FGE_microten", .after = "fechatoma")
+data <- data %>%
+  relocate("tiempo_total", .after = "dias_transcurridos")
+
+# Filtrar las filas con datos faltantes en las variables utilizadas en los modelos
+variables_modelo <- c("FGE_microten", "dias_transcurridos", "Edad", "Hemodialisis", "Cociente.Album.Creat",
+                      "Porcbasofilos", "Porclinfocitos", "Porcmonocitos", "Acido.Folico", "ALAT.GPT",
+                      "Albumina", "Bilirrubina.directa", "Bilirrubina.total", "Calcio", "CHCM",
+                      "Cifra.de.Plaquetas", "CO2.suero", "Colesterol.de.LDL.Formula.de.Friedewald",
+                      "Creatinina", "Creatinina.orina", "Densidad", "Fosfatasa.alcalina", "Gamma.GT",
+                      "HDL.Colesterol", "Hemoglobina.A1c", "LDH", "Linfocitos.V.Absoluto",
+                      "Monocitos.V.Absoluto", "Parathormona.Intacta", "Peso", "Potasio",
+                      "Potasio.en.orina", "Proteina.C.reactiva", "Proteinas.totales", "Sodio.orina",
+                      "T4.libre", "Talla", "Temperatura.Axilar", "TSH", "Vitamina.B12",
+                      "Volumen.plaquetar.medio")
+
+data <- data %>%
+  filter(complete.cases(data[variables_modelo]))
+
+# Asegurarse de que las IDs coincidan en ambos modelos
 ids_longitudinal <- unique(data$ID)
-ids_survival <- unique(data$ID[data$tiempo_total > 0 & !is.na(data$Fallecido)])
+ids_survival <- unique(data$ID)
 
-common_ids <- intersect(ids_longitudinal, ids_survival)
+# Filtrar el conjunto de datos para usar solo IDs que estén en ambos conjuntos
+data <- data %>% filter(ID %in% ids_longitudinal & ID %in% ids_survival)
 
-# Filter the data to include only common IDs
-data <- data %>% filter(ID %in% common_ids)
+# Comprobar las primeras filas del dataframe para asegurarse de que los datos se han cargado correctamente
+cat("Primeras filas del dataframe:\n")
+print(head(data))
 
-# Fit the longitudinal submodel
-lme_fit <- lme(FGE ~ OrdenFecha, random = ~ OrdenFecha | ID, data = data)
-summary(lme_fit)
+# Ajustar el modelo longitudinal de efectos mixtos usando lme
+cat("Ajustando el modelo longitudinal de efectos mixtos...\n")
 
-# Fit the survival submodel
-surv_fit <- coxph(Surv(tiempo_total, Fallecido) ~ Estado + cluster(ID), data = data, x = TRUE)
-summary(surv_fit)
+longitudinal_model <- lme(FGE_microten ~ dias_transcurridos + Edad + Hemodialisis + Cociente.Album.Creat + Porcbasofilos +
+  Porclinfocitos + Porcmonocitos + Acido.Folico + ALAT.GPT + Albumina +
+  Bilirrubina.directa + Bilirrubina.total + Calcio + CHCM + Cifra.de.Plaquetas +
+  CO2.suero + Colesterol.de.LDL.Formula.de.Friedewald + Creatinina +
+  Creatinina.orina + Densidad + Fosfatasa.alcalina + Gamma.GT + HDL.Colesterol +
+  Hemoglobina.A1c + LDH + Linfocitos.V.Absoluto + Monocitos.V.Absoluto +
+  Parathormona.Intacta + Peso + Potasio + Potasio.en.orina + Proteina.C.reactiva +
+  Proteinas.totales + Sodio.orina + T4.libre + Talla + Temperatura.Axilar + TSH +
+  Vitamina.B12 + Volumen.plaquetar.medio,
+                          random = ~ 1 | ID, data = data)
 
-# Fit the joint model
-joint_fit <- jointModel(lme_fit, surv_fit, timeVar = "OrdenFecha", method = "Cox-PH-GH")
-summary(joint_fit)
+# Mostrar resumen del modelo longitudinal para asegurarse de que se ha ajustado correctamente
+cat("Resumen del modelo longitudinal:\n")
+print(summary(longitudinal_model))
 
+# Ajustar el modelo de Cox para la supervivencia
+cat("Ajustando el modelo de Cox para la supervivencia...\n")
 
-# Select relevant columns for the survival analysis
-survival_data <- data[, c("ID", "fechatoma", "Event1", "Fallecido", "Hemodialisis", "Transplante", "Edad",
-                          "Cociente.Album.Creat", "Porcbasofilos", "Porclinfocitos", "Porcmonocitos",
-                          "Acido.Folico", "ALAT.GPT", "Albumina", "Bilirrubina.directa", "Bilirrubina.total",
-                          "Calcio", "CHCM", "Cifra.de.Plaquetas", "CO2.suero", "Colesterol.de.LDL.Formula.de.Friedewald",
-                          "Creatinina", "Creatinina.orina", "Densidad", "Fosfatasa.alcalina", "Gamma.GT",
-                          "HDL.Colesterol", "Hemoglobina.A1c", "LDH", "Linfocitos.V.Absoluto", "Monocitos.V.Absoluto",
-                          "Parathormona.Intacta", "Peso", "Potasio", "Potasio.en.orina", "Proteina.C.reactiva",
-                          "Proteinas.totales", "Sodio.orina", "T4.libre", "Talla", "Temperatura.Axilar", "TSH",
-                          "Vitamina.B12", "Volumen.plaquetar.medio")]
+survival_model <- coxph(Surv(dias_transcurridos, FGE_microten) ~ Edad + Hemodialisis + Cociente.Album.Creat + Porcbasofilos +
+  Porclinfocitos + Porcmonocitos + Acido.Folico + ALAT.GPT + Albumina +
+  Bilirrubina.directa + Bilirrubina.total + Calcio + CHCM + Cifra.de.Plaquetas +
+  CO2.suero + Colesterol.de.LDL.Formula.de.Friedewald + Creatinina +
+  Creatinina.orina + Densidad + Fosfatasa.alcalina + Gamma.GT + HDL.Colesterol +
+  Hemoglobina.A1c + LDH + Linfocitos.V.Absoluto + Monocitos.V.Absoluto +
+  Parathormona.Intacta + Peso + Potasio + Potasio.en.orina + Proteina.C.reactiva +
+  Proteinas.totales + Sodio.orina + T4.libre + Talla + Temperatura.Axilar + TSH +
+  Vitamina.B12 + Volumen.plaquetar.medio + cluster(ID), data = data, x = TRUE)
+
+# Mostrar resumen del modelo de supervivencia para asegurarse de que se ha ajustado correctamente
+cat("Resumen del modelo de supervivencia:\n")
+print(summary(survival_model))
+
+# Verificar si el número de observaciones coincide
+cat("Número de observaciones en el modelo longitudinal (lme):\n")
+print(length(longitudinal_model$data$ID))
+cat("Número de observaciones en el modelo de supervivencia (coxph):\n")
+print(length(survival_model$y[, 1]))
+
+# Crear el modelo conjunto
+cat("Creando el modelo conjunto...\n")
+joint_model <- jointModel(longitudinal_model, survival_model, timeVar = "dias_transcurridos")
+
+# Mostrar resumen del modelo conjunto
+cat("Resumen del modelo conjunto:\n")
+print(summary(joint_model))
