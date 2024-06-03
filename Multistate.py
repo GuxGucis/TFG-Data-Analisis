@@ -93,7 +93,7 @@ plt.title('Importancia de las Variables en el Modelo Multiestado General')
 plt.xlabel('Coeficiente')
 plt.ylabel('Variable')
 plt.grid(True)
-plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_importancia_variables_modelo_general.png')  # Guardar la gráfica
+plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_importancia_variables_modelo_general.png')
 plt.show()
 
 # CURVAS DE SUPERVIVENCIA POR HEMODIALISIS
