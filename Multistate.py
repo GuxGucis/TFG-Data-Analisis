@@ -1,17 +1,16 @@
 import pandas as pd
 import numpy as np
-from lifelines import CoxTimeVaryingFitter
+from lifelines import CoxTimeVaryingFitter, KaplanMeierFitter
+import matplotlib.pyplot as plt
 
 # Cargar los datos
-# Set the base URL for your data
 baseurl = "D:/gugui/Documentos/Universidad/TFG/"
 df = pd.read_csv(baseurl + "mice/ANALITIC_mice_1.csv", sep=",")
-
 
 # Convertir 'fechatoma' a datetime
 df['fechatoma'] = pd.to_datetime(df['fechatoma'])
 
-# Ordenar por 'id' y 'fechatoma'
+# Ordenar por 'ID' y 'fechatoma'
 df = df.sort_values(by=['ID', 'fechatoma'])
 
 # Crear columnas 'start' y 'stop'
@@ -27,114 +26,124 @@ df['stop'] = (df['stop'] - reference_date).dt.days
 # Eliminar filas con start y stop ambos en tiempo 0
 df = df.loc[~((df['start'] == 0) & (df['stop'] == 0))]
 
-# Crear una columna 'event' que indica si el FGE ha disminuido (empeoramiento)
-df['event'] = df.groupby('ID')['FGE'].diff().fillna(0).apply(lambda x: 1 if x < 0 else 0)
+# Definir los estados basados en FGE y estado de fallecimiento
+definir_estado = lambda fge, fallecido: (
+    6 if fallecido == 1 else
+    1 if fge > 90 else
+    2 if 60 <= fge <= 89 else
+    3 if 30 <= fge <= 59 else
+    4 if 15 <= fge <= 29 else
+    5 if fge < 15 else
+    np.nan
+)
 
-# Combinar filas con start y stop iguales y un evento de muerte
-df = df.sort_values(by=['ID', 'start', 'stop'])
+df['estado_actual'] = df.apply(lambda row: definir_estado(row['FGE'], row['Fallecido']), axis=1)
+df['estado_siguiente'] = df.groupby('ID')['estado_actual'].shift(-1)
+
+# Eliminar filas sin transición
+df = df.dropna(subset=['estado_siguiente'])
+
+# Convertir las columnas de tiempo a numéricas
+df['start'] = pd.to_numeric(df['start'], errors='coerce')
+df['stop'] = pd.to_numeric(df['stop'], errors='coerce')
+df['estado_siguiente'] = pd.to_numeric(df['estado_siguiente'], errors='coerce')
+
+# Eliminar filas con valores nulos en 'start', 'stop', o 'estado_siguiente'
+df = df.dropna(subset=['start', 'stop', 'estado_siguiente'])
+
+# Colapsar filas con start y stop iguales y un evento de muerte
 df['next_start'] = df.groupby('ID')['start'].shift(-1)
-df['next_event'] = df.groupby('ID')['event'].shift(-1)
-df.loc[(df['start'] == df['stop']) & (df['event'] == 1), 'stop'] = df['next_start']
+df['next_event'] = df.groupby('ID')['estado_siguiente'].shift(-1)
+df.loc[(df['start'] == df['stop']) & (df['estado_siguiente'] == 6), 'stop'] = df['next_start']
 df = df.drop(columns=['next_start', 'next_event'])
 
 # Verificar y eliminar cualquier fila con NaN o infinitos
 df = df.replace([np.inf, -np.inf], np.nan).dropna()
 
-# El mensaje indica que la columna 'Densidad' tiene una varianza muy baja,
-# lo que puede afectar la convergencia del modelo.
-# Si esta columna no proporciona información significativa,
-# es recomendable eliminarla antes de ajustar el modelo.
-# Seleccionar todas las columnas relevantes para el análisis
-variables_clinicas = ['FGE', 'Edad', 'Hemodialisis', 'Cociente.Album.Creat', 'Porcbasofilos', 'Porclinfocitos',
-                      'Porcmonocitos', 'Acido.Folico', 'ALAT.GPT', 'Albumina',
-                      'Bilirrubina.directa', 'Bilirrubina.total', 'Calcio', 'CHCM',
-                      'Cifra.de.Plaquetas', 'CO2.suero',
-                      'Colesterol.de.LDL.Formula.de.Friedewald', 'Creatinina',
-                      'Creatinina.orina', 'Fosfatasa.alcalina', 'Gamma.GT',
-                      'HDL.Colesterol', 'Hemoglobina.A1c', 'LDH', 'Linfocitos.V.Absoluto',
-                      'Monocitos.V.Absoluto', 'Parathormona.Intacta', 'Peso', 'Potasio',
-                      'Potasio.en.orina', 'Proteina.C.reactiva', 'Proteinas.totales',
-                      'Sodio.orina', 'T4.libre', 'Talla', 'Temperatura.Axilar', 'TSH',
-                      'Vitamina.B12', 'Volumen.plaquetar.medio']
+# Eliminar filas donde 'start' no sea menor que 'stop'
+df = df[df['start'] < df['stop']]
 
-# Crear el DataFrame con las columnas necesarias para el modelo de Cox
-df_cox = df[['ID', 'start', 'stop', 'event'] + variables_clinicas]
+# Eliminar columnas con baja variabilidad
+low_variance_cols = ['Transplante', 'Densidad']
+df = df.drop(columns=low_variance_cols)
+
+# Eliminar columnas datetime y otras no numéricas
+df = df.select_dtypes(include=[np.number])
+
+# Asegurarse de que no hay columnas datetime residuales
+print(df.dtypes)
 
 # Crear el modelo de CoxTimeVarying
 ctv = CoxTimeVaryingFitter()
 
-# Ajustar el modelo
-ctv.fit(df_cox, id_col='ID', event_col='event', start_col='start', stop_col='stop', show_progress=True)
+# Ajustar el modelo para el conjunto de datos completo
+print("Ajustando el modelo general")
+try:
+    ctv.fit(df, id_col='ID', event_col='estado_siguiente', start_col='start', stop_col='stop', show_progress=True)
+except Exception as e:
+    print(f"Error ajustando el modelo: {e}")
 
 # Mostrar el resumen del modelo
 print(ctv.summary)
 
-#%%
-import pandas as pd
-import numpy as np
-from lifelines import CoxTimeVaryingFitter, KaplanMeierFitter
-import matplotlib.pyplot as plt
-
-# IMPORTANCIA DE LAS VARIABLES
-
-# Graficar la importancia de las variables (coeficientes del modelo de Cox)
-plt.figure(figsize=(10, 12))
+# Graficar la importancia de las variables
+plt.figure(figsize=(12, 10))
 ctv.plot()
-plt.title('Importancia de las Variables')
+plt.title('Importancia de las Variables en el Modelo Multiestado General')
 plt.xlabel('Coeficiente')
 plt.ylabel('Variable')
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_importancia_variables.png')
+plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_importancia_variables_modelo_general.png')  # Guardar la gráfica
 plt.show()
 
-# CURVAS DE SUPERVIVICENCIA POR HEMIADÍALISIS
-
-# Obtener la estimación del riesgo acumulado base
-baseline_cumulative_hazard = ctv.baseline_cumulative_hazard_
-
+# CURVAS DE SUPERVIVENCIA POR HEMODIALISIS
 # Crear el estimador de Kaplan-Meier para la supervivencia
 kmf = KaplanMeierFitter()
 
 # Separar los datos en función de la variable 'Hemodialisis'
-hemodialisis_si = df_cox[df_cox['Hemodialisis'] == 1]
-hemodialisis_no = df_cox[df_cox['Hemodialisis'] == 0]
+hemodialisis_si = df[df['Hemodialisis'] == 1]
+hemodialisis_no = df[df['Hemodialisis'] == 0]
+
+print(f"Datos con hemodiálisis: {len(hemodialisis_si)} filas")
+print(f"Datos sin hemodiálisis: {len(hemodialisis_no)} filas")
 
 # Graficar la función de supervivencia para ambos grupos
 plt.figure(figsize=(10, 6))
 
 # Supervivencia para pacientes con hemodiálisis
 if not hemodialisis_si.empty:
-    kmf.fit(durations=hemodialisis_si['stop'], event_observed=hemodialisis_si['event'], entry=hemodialisis_si['start'])
+    print("Ajustando el modelo Kaplan-Meier para pacientes con hemodiálisis")
+    kmf.fit(durations=hemodialisis_si['stop'], event_observed=hemodialisis_si['estado_siguiente'] == 6, entry=hemodialisis_si['start'])
     kmf.plot_survival_function(ci_show=False, label='Hemodialisis SI')
 
 # Supervivencia para pacientes sin hemodiálisis
 if not hemodialisis_no.empty:
-    kmf.fit(durations=hemodialisis_no['stop'], event_observed=hemodialisis_no['event'], entry=hemodialisis_no['start'])
+    print("Ajustando el modelo Kaplan-Meier para pacientes sin hemodiálisis")
+    kmf.fit(durations=hemodialisis_no['stop'], event_observed=hemodialisis_no['estado_siguiente'] == 6, entry=hemodialisis_no['start'])
     kmf.plot_survival_function(ci_show=False, label='Hemodialisis NO')
-
 
 plt.title('Curva de Supervivencia Predicha por Hemodialisis')
 plt.xlabel('Tiempo')
 plt.ylabel('Probabilidad de Supervivencia')
 plt.legend()
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_Surv_HM.png')
+plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_Surv_HM.png')
 plt.show()
 
-# CURVAS DE SUPERVIVICENCIA POR GRUPOS DE EDAD
+# CURVAS DE SUPERVIVENCIA POR GRUPOS DE EDAD
 
 # Definir los grupos de edad
 bins = [0, 30, 50, 70, 100]
 labels = ['<30', '30-50', '50-70', '>70']
-df_cox['age_group'] = pd.cut(df_cox['Edad'], bins=bins, labels=labels, right=False)
+df['age_group'] = pd.cut(df['Edad'], bins=bins, labels=labels, right=False)
 
 # Graficar la función de supervivencia para cada grupo de edad
 plt.figure(figsize=(10, 6))
 
 for label in labels:
-    grupo_edad = df_cox[df_cox['age_group'] == label]
+    grupo_edad = df[df['age_group'] == label]
     if not grupo_edad.empty:
-        kmf.fit(durations=grupo_edad['stop'], event_observed=grupo_edad['event'], entry=grupo_edad['start'])
+        kmf.fit(durations=grupo_edad['stop'], event_observed=grupo_edad['estado_siguiente'] == 6, entry=grupo_edad['start'])
         kmf.plot_survival_function(ci_show=False, label=f'Edad {label}')
 
 plt.title('Curva de Supervivencia Predicha por Grupo de Edad')
@@ -142,7 +151,7 @@ plt.xlabel('Tiempo')
 plt.ylabel('Probabilidad de Supervivencia')
 plt.legend()
 plt.grid(True)
-plt.savefig(baseurl+'Graficas/python/MultiEstado/MS_Surv_edad.png')
+plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_Surv_edad.png')
 plt.show()
 
 print('fin')
