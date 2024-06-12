@@ -5,115 +5,137 @@ from lifelines import WeibullAFTFitter, KaplanMeierFitter
 
 # Cargar los datos
 baseurl = "D:/gugui/Documentos/Universidad/TFG/"
-df = pd.read_csv(baseurl + "mice/ANALITIC_mice_1.csv", sep=",")
+df_1 = pd.read_csv(baseurl + "mice/ANALITIC_mice_1.csv", sep=",")
+df_2 = pd.read_csv(baseurl + "mice/ANALITIC_mice_2.csv", sep=",")
+df_3 = pd.read_csv(baseurl + "mice/ANALITIC_mice_3.csv", sep=",")
+df_4 = pd.read_csv(baseurl + "mice/ANALITIC_mice_4.csv", sep=",")
+df_5 = pd.read_csv(baseurl + "mice/ANALITIC_mice_5.csv", sep=",")
+df_6 = pd.read_csv(baseurl + "mice/ANALITIC_mice_6.csv", sep=",")
+df_7 = pd.read_csv(baseurl + "mice/ANALITIC_mice_7.csv", sep=",")
 
-# Aseguramos que 'fechatoma' sea de tipo datetime
-df['fechatoma'] = pd.to_datetime(df['fechatoma'])
+dataframes = {
+    1: df_1,
+    2: df_2,
+    3: df_3,
+    4: df_4,
+    5: df_5,
+    6: df_6,
+    7: df_7
+}
 
-# Ordenamos por id de paciente y fecha de toma de datos
-df = df.sort_values(by=['ID', 'fechatoma'])
+mice = [1, 2, 3, 4, 5, 6, 7]
 
-# Definimos el umbral de FGE que indica el evento (ajusta según tus necesidades)
-threshold_value = 50  # Ejemplo: cualquier valor de FGE por debajo de 50 indica un evento
+for i in mice:
+    # Obtener el dataframe correspondiente
+    df = dataframes[i]
 
-# Calculamos la duración en días hasta el evento observado o el último seguimiento
-df['max_fechatoma'] = df.groupby('ID')['fechatoma'].transform('max')
-df['duration'] = (df['max_fechatoma'] - df['fechatoma']).dt.days
-df['duration'] = df['duration'] + 1  # Agregamos 1 día a todas las duraciones para asegurarnos de que sean positivas
-df['event'] = df['FGE'] < threshold_value
+    # Aseguramos que 'fechatoma' sea de tipo datetime
+    df['fechatoma'] = pd.to_datetime(df['fechatoma'])
 
-# Obtener la edad mínima de cada paciente
-df_min_age = df.groupby('ID')['Edad'].min().reset_index()
-df_min_age.columns = ['ID', 'min_age']
+    # Ordenamos por id de paciente y fecha de toma de datos
+    df = df.sort_values(by=['ID', 'fechatoma'])
 
-# Merge con el dataframe de supervivencia
-df_survival = pd.merge(df, df_min_age, on='ID')
+    # Definimos el umbral de FGE que indica el evento (ajusta según tus necesidades)
+    threshold_value = 50  # Ejemplo: cualquier valor de FGE por debajo de 50 indica un evento
 
-# Añadimos las covariables a df_survival
-covariates = ['Edad', 'Hemodialisis', 'Cociente.Album.Creat', 'Porcbasofilos', 'Porclinfocitos', 'Porcmonocitos',
-              'Acido.Folico', 'ALAT.GPT', 'Albumina', 'Bilirrubina.directa', 'Bilirrubina.total', 'Calcio', 'CHCM',
-              'Cifra.de.Plaquetas', 'CO2.suero', 'Colesterol.de.LDL.Formula.de.Friedewald', 'Creatinina',
-              'Creatinina.orina', 'Densidad', 'Fosfatasa.alcalina', 'Gamma.GT', 'HDL.Colesterol', 'Hemoglobina.A1c',
-              'LDH', 'Linfocitos.V.Absoluto', 'Monocitos.V.Absoluto', 'Parathormona.Intacta', 'Peso', 'Potasio',
-              'Potasio.en.orina', 'Proteina.C.reactiva', 'Proteinas.totales', 'Sodio.orina', 'T4.libre', 'Talla',
-              'Temperatura.Axilar', 'TSH', 'Vitamina.B12', 'Volumen.plaquetar.medio']
+    # Calculamos la duración en días hasta el evento observado o el último seguimiento
+    df['max_fechatoma'] = df.groupby('ID')['fechatoma'].transform('max')
+    df['duration'] = (df['max_fechatoma'] - df['fechatoma']).dt.days
+    df['duration'] = df['duration'] + 1  # Agregamos 1 día a todas las duraciones para asegurarnos de que sean positivas
+    df['event'] = df['FGE'] < threshold_value
 
-for covariate in covariates:
-    df_survival[covariate] = df[covariate]
+    # Obtener la edad mínima de cada paciente
+    df_min_age = df.groupby('ID')['Edad'].min().reset_index()
+    df_min_age.columns = ['ID', 'min_age']
 
-# Asegurémonos de que la columna 'event' esté presente
-df_survival['event'] = df['event']
+    # Merge con el dataframe de supervivencia
+    df_survival = pd.merge(df, df_min_age, on='ID')
 
-# Ajustamos el modelo WeibullAFTFitter
-aft = WeibullAFTFitter()
-aft.fit(df_survival[['duration', 'event'] + covariates], 'duration', event_col='event')
+    # Añadimos las covariables a df_survival
+    covariates = ['Edad', 'Hemodialisis', 'Cociente.Album.Creat', 'Porcbasofilos', 'Porclinfocitos', 'Porcmonocitos',
+                  'Acido.Folico', 'ALAT.GPT', 'Albumina', 'Bilirrubina.directa', 'Bilirrubina.total', 'Calcio', 'CHCM',
+                  'Cifra.de.Plaquetas', 'CO2.suero', 'Colesterol.de.LDL.Formula.de.Friedewald', 'Creatinina',
+                  'Creatinina.orina', 'Densidad', 'Fosfatasa.alcalina', 'Gamma.GT', 'HDL.Colesterol', 'Hemoglobina.A1c',
+                  'LDH', 'Linfocitos.V.Absoluto', 'Monocitos.V.Absoluto', 'Parathormona.Intacta', 'Peso', 'Potasio',
+                  'Potasio.en.orina', 'Proteina.C.reactiva', 'Proteinas.totales', 'Sodio.orina', 'T4.libre', 'Talla',
+                  'Temperatura.Axilar', 'TSH', 'Vitamina.B12', 'Volumen.plaquetar.medio']
 
-# Mostramos los resultados
-print(aft.summary)
+    for covariate in covariates:
+        df_survival[covariate] = df[covariate]
 
-# Verificar las columnas en aft.summary
-print("Columnas disponibles en aft.summary:", aft.summary.columns)
-print("Contenido de aft.summary:", aft.summary)
+    # Asegurémonos de que la columna 'event' esté presente
+    df_survival['event'] = df['event']
 
-# Gráfica de supervivencia por franjas de edades
-kmf = KaplanMeierFitter()
+    # Ajustamos el modelo WeibullAFTFitter
+    aft = WeibullAFTFitter()
+    aft.fit(df_survival[['duration', 'event'] + covariates], 'duration', event_col='event')
 
-df_survival['age_group'] = pd.cut(df_survival['min_age'], bins=[0, 30, 40, 50, 70, 100], labels=['<30', '30-40', '40-50', '50-70', '>70'])
+    # Mostramos los resultados
+    print(aft.summary)
 
-plt.figure(figsize=(10, 6))
-for name, grouped_df in df_survival.groupby('age_group'):
-    kmf.fit(grouped_df['duration'], grouped_df['event'], label=name)
-    kmf.plot_survival_function()
+    # Verificar las columnas en aft.summary
+    print("Columnas disponibles en aft.summary:", aft.summary.columns)
+    print("Contenido de aft.summary:", aft.summary)
 
-plt.title('Curvas de Supervivencia por Franjas de Edades')
-plt.xlabel('Tiempo (días)')
-plt.ylabel('Probabilidad de Supervivencia')
-plt.legend(title='Grupo de Edad')
-plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Surv_edad.png')
-plt.show()
+    # Gráfica de supervivencia por franjas de edades
+    kmf = KaplanMeierFitter()
 
-# Gráfica de supervivencia por tratamiento de hemodiálisis
-plt.figure(figsize=(10, 6))
-for name, grouped_df in df_survival.groupby('Hemodialisis'):
-    kmf.fit(grouped_df['duration'], grouped_df['event'], label='Hemodialisis' if name == 1 else 'No Hemodialisis')
-    kmf.plot_survival_function()
+    df_survival['age_group'] = pd.cut(df_survival['min_age'], bins=[0, 30, 40, 50, 70, 100], labels=['<30', '30-40', '40-50', '50-70', '>70'])
 
-plt.title('Curvas de Supervivencia por Tratamiento de Hemodialisis')
-plt.xlabel('Tiempo (días)')
-plt.ylabel('Probabilidad de Supervivencia')
-plt.legend(title='Tratamiento de Hemodialisis')
-plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Surv_HM.png')
-plt.show()
+    plt.figure(figsize=(10, 6))
+    for name, grouped_df in df_survival.groupby('age_group'):
+        kmf.fit(grouped_df['duration'], grouped_df['event'], label=name)
+        kmf.plot_survival_function()
 
-# Verificar las columnas y el contenido de aft.summary
-summary_df = aft.summary.reset_index()  # Aplanar el índice
-print("Contenido de summary_df después de reset_index:", summary_df)
+    plt.title('Curvas de Supervivencia por Franjas de Edades')
+    plt.xlabel('Tiempo (días)')
+    plt.ylabel('Probabilidad de Supervivencia')
+    plt.legend(title='Grupo de Edad')
+    plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Surv_edad_' + str(i) + '.png')
+    plt.close()
 
-# Filtrar los coeficientes relevantes
-summary_df = summary_df[summary_df['param'] == 'lambda_']
-print("Contenido de summary_df después del filtrado:", summary_df)
+    # Gráfica de supervivencia por tratamiento de hemodiálisis
+    plt.figure(figsize=(10, 6))
+    for name, grouped_df in df_survival.groupby('Hemodialisis'):
+        kmf.fit(grouped_df['duration'], grouped_df['event'], label='Hemodialisis' if name == 1 else 'No Hemodialisis')
+        kmf.plot_survival_function()
 
-# Graficar la importancia de las variables
-plt.figure(figsize=(12, 12))
-summary_df.set_index('covariate')['coef'].plot(kind='barh', color='skyblue', edgecolor='black')
-plt.title('Importancia de las Variables en el Modelo Weibull')
-plt.xlabel('Coeficiente')
-plt.ylabel('Variable')
-plt.axvline(x=0, color='black', linestyle='--')
-plt.subplots_adjust(left=0.3)  # Aumentar el margen izquierdo
-plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Importancia_Variables.png')
-plt.show()
+    plt.title('Curvas de Supervivencia por Tratamiento de Hemodialisis')
+    plt.xlabel('Tiempo (días)')
+    plt.ylabel('Probabilidad de Supervivencia')
+    plt.legend(title='Tratamiento de Hemodialisis')
+    plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Surv_HM_' + str(i) + '.png')
+    plt.close()
 
-# Mostrar la significancia de las variables
-plt.figure(figsize=(12, 12))
-summary_df.set_index('covariate')['-log2(p)'].plot(kind='barh', color='lightcoral', edgecolor='black')
-plt.title('Significancia de las Variables en el Modelo Weibull')
-plt.xlabel('-log2(p)')
-plt.ylabel('Variable')
-plt.axvline(x=-log2(0.05), color='black', linestyle='--', label='p=0.05')
-plt.legend()
-plt.subplots_adjust(left=0.3)  # Aumentar el margen izquierdo
-plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Significancia_Variables.png')
-plt.show()
+    # Verificar las columnas y el contenido de aft.summary
+    summary_df = aft.summary.reset_index()  # Aplanar el índice
+    print("Contenido de summary_df después de reset_index:", summary_df)
 
-print('fin')
+    # Filtrar los coeficientes relevantes
+    summary_df = summary_df[summary_df['param'] == 'lambda_']
+    print("Contenido de summary_df después del filtrado:", summary_df)
+
+    # Graficar la importancia de las variables
+    plt.figure(figsize=(12, 12))
+    summary_df.set_index('covariate')['coef'].plot(kind='barh', color='skyblue', edgecolor='black')
+    plt.title('Importancia de las Variables en el Modelo Weibull')
+    plt.xlabel('Coeficiente')
+    plt.ylabel('Variable')
+    plt.axvline(x=0, color='black', linestyle='--')
+    plt.subplots_adjust(left=0.3)  # Aumentar el margen izquierdo
+    plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Importancia_Variables_' + str(i) + '.png')
+    plt.close()
+
+    # Mostrar la significancia de las variables
+    plt.figure(figsize=(12, 12))
+    summary_df.set_index('covariate')['-log2(p)'].plot(kind='barh', color='lightcoral', edgecolor='black')
+    plt.title('Significancia de las Variables en el Modelo Weibull')
+    plt.xlabel('-log2(p)')
+    plt.ylabel('Variable')
+    plt.axvline(x=-log2(0.05), color='black', linestyle='--', label='p=0.05')
+    plt.legend()
+    plt.subplots_adjust(left=0.3)  # Aumentar el margen izquierdo
+    plt.savefig(baseurl+'Graficas/python/ParamWeibull/PW_Significancia_Variables_' + str(i) + '.png')
+    plt.close()
+
+    print('fin de la iteración: ' + str(i))

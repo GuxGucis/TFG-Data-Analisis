@@ -99,7 +99,7 @@ print('------- quitar >= 90% nulos -------')
 ncolumnas_antes <- ncol(ANALITIC)
 print(paste('Número de columnas antes: ', ncolumnas_antes))
 
-# Identifica las columnas que tienen 60% o más de datos faltantes
+# Identifica las columnas que tienen 90% o más de datos faltantes
 columnas_con_altos_nulos <- names(ANALITIC)[porcentaje_nulos_por_columna >= 90]
 
 # Elimina esas columnas de ANALITIC

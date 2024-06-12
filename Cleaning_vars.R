@@ -32,6 +32,16 @@ importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", heade
 
 # ------------------- Análisis previo -------------------
 print('------------------- Análisis previo -------------------')
+
+datos_ausentes <- sapply(ANALITIC, function(x) sum(is.na(x)))
+datos_ausentes_df <- data.frame(columna = names(datos_ausentes), ausentes = datos_ausentes)
+g <- ggplot(datos_ausentes_df, aes(x = reorder(columna, -ausentes), y = ausentes)) +
+  geom_bar(stat = "identity", fill="#69b3a2", color="#e9ecef") +
+  coord_flip() +
+  labs(title = "Datos Ausentes por Columna después de limpieza", x = "Variable", y = "Datos Ausentes")
+
+ggsave(paste0(baseurl, "Graficas/Cleaning/Ausentes_Preclean.png"), plot = g, width = 18, height = 12, dpi = 300)
+
 # ------------------- Significancia COX -------------------
 print('------------------- Significancia COX -------------------')
 
@@ -253,38 +263,38 @@ for (key in names(condiciones)) {
 # ------------------- Rellenado de Datos con MICE -------------------
 print('------------------- Rellenado de Datos con MICE -------------------')
 
-# CONFIGURACIÓN PARA PODER USAR VARIOS HILOS
-# Detectar el número de núcleos lógicos
-num_cores <- detectCores(logical = TRUE)
-
-# Crear un clúster con un núcleo menos que el total para dejar recursos para el sistema
-cl <- makeCluster(num_cores - 2)
-
-# Usar el clúster para paralelizar mice
-ANALITIC_mice <- mice(ANALITIC_clean, m=7, method='cart', seed=123, parallel = "snow", maxit=7, cluster=cl)
-
-# Detener el clúster una vez completada la imputación
-stopCluster(cl)
-
-# Selecciona un conjunto imputado
-ANALITIC_1 <- complete(ANALITIC_mice, 1)
-ANALITIC_2 <- complete(ANALITIC_mice, 2)
-ANALITIC_3 <- complete(ANALITIC_mice, 3)
-ANALITIC_4 <- complete(ANALITIC_mice, 4)
-ANALITIC_5 <- complete(ANALITIC_mice, 5)
-ANALITIC_6 <- complete(ANALITIC_mice, 6)
-ANALITIC_7 <- complete(ANALITIC_mice, 7)
-
-# ------------------- EXPORTAR -------------------
-print('------------------- EXPORTAR -------------------')
-
-write.csv(ANALITIC_1, paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), row.names = FALSE)
-write.csv(ANALITIC_2, paste0(baseurl, "Mice/ANALITIC_mice_2.csv"), row.names = FALSE)
-write.csv(ANALITIC_3, paste0(baseurl, "Mice/ANALITIC_mice_3.csv"), row.names = FALSE)
-write.csv(ANALITIC_4, paste0(baseurl, "Mice/ANALITIC_mice_4.csv"), row.names = FALSE)
-write.csv(ANALITIC_5, paste0(baseurl, "Mice/ANALITIC_mice_5.csv"), row.names = FALSE)
-write.csv(ANALITIC_6, paste0(baseurl, "Mice/ANALITIC_mice_6.csv"), row.names = FALSE)
-write.csv(ANALITIC_7, paste0(baseurl, "Mice/ANALITIC_mice_7.csv"), row.names = FALSE)
+# # CONFIGURACIÓN PARA PODER USAR VARIOS HILOS
+# # Detectar el número de núcleos lógicos
+# num_cores <- detectCores(logical = TRUE)
+#
+# # Crear un clúster con un núcleo menos que el total para dejar recursos para el sistema
+# cl <- makeCluster(num_cores - 2)
+#
+# # Usar el clúster para paralelizar mice
+# ANALITIC_mice <- mice(ANALITIC_clean, m=7, method='cart', seed=123, parallel = "snow", maxit=7, cluster=cl)
+#
+# # Detener el clúster una vez completada la imputación
+# stopCluster(cl)
+#
+# # Selecciona un conjunto imputado
+# ANALITIC_1 <- complete(ANALITIC_mice, 1)
+# ANALITIC_2 <- complete(ANALITIC_mice, 2)
+# ANALITIC_3 <- complete(ANALITIC_mice, 3)
+# ANALITIC_4 <- complete(ANALITIC_mice, 4)
+# ANALITIC_5 <- complete(ANALITIC_mice, 5)
+# ANALITIC_6 <- complete(ANALITIC_mice, 6)
+# ANALITIC_7 <- complete(ANALITIC_mice, 7)
+#
+# # ------------------- EXPORTAR -------------------
+# print('------------------- EXPORTAR -------------------')
+#
+# write.csv(ANALITIC_1, paste0(baseurl, "Mice/ANALITIC_mice_1.csv"), row.names = FALSE)
+# write.csv(ANALITIC_2, paste0(baseurl, "Mice/ANALITIC_mice_2.csv"), row.names = FALSE)
+# write.csv(ANALITIC_3, paste0(baseurl, "Mice/ANALITIC_mice_3.csv"), row.names = FALSE)
+# write.csv(ANALITIC_4, paste0(baseurl, "Mice/ANALITIC_mice_4.csv"), row.names = FALSE)
+# write.csv(ANALITIC_5, paste0(baseurl, "Mice/ANALITIC_mice_5.csv"), row.names = FALSE)
+# write.csv(ANALITIC_6, paste0(baseurl, "Mice/ANALITIC_mice_6.csv"), row.names = FALSE)
+# write.csv(ANALITIC_7, paste0(baseurl, "Mice/ANALITIC_mice_7.csv"), row.names = FALSE)
 
 write.csv(ANALITIC_clean, paste0(baseurl, "data/ANALITIC_clean.csv"), row.names = FALSE)
 

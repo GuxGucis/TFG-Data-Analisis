@@ -11,6 +11,9 @@ library(parallel)
 
 # ------------------- CARGADO DE DATOS -------------------
 
+# Se usa mice con las tendencias generales --> CORROBORA QUE NI TRANSPLANTES NI CON TODOS LOS TRATAMIENTOS SON GRUPOS QUE NO INTERESAN
+# Ahora con esto recogemos las imporancias de Cox --> Para poder tambien descartar variables
+
 # ------------- TORRE -------------
 baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 

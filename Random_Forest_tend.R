@@ -186,7 +186,7 @@ rf_fit_FGE_hm <- rfsrc(formula_FGE, data = df_rf_hm,
                        forest = TRUE,
                        importance = TRUE,
                        tree.err = TRUE,
-                       ntree = 50, na.action = "na.impute")
+                       ntree = 35, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FGE_hm)
@@ -243,7 +243,7 @@ rf_fit_FLL_hm <- rfsrc(formula_Fallecido, data = df_rf_hm,
                        forest = TRUE,
                        importance = TRUE,
                        tree.err = TRUE,
-                       ntree = 30, na.action = "na.impute")
+                       ntree = 15, na.action = "na.impute")
 
 # Calcular la importancia de las variables
 vimp_results <- vimp(rf_fit_FLL_hm)
