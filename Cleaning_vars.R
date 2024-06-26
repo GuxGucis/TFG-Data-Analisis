@@ -15,6 +15,7 @@ library(readxl)
 library(stringr)
 library(parallel)
 library(patchwork)
+library(matrixStats)
 
 # ------------------- CARGADO DE DATOS -------------------
 
@@ -28,7 +29,7 @@ baseurl <- "D:/gugui/Documentos/Universidad/TFG/"
 
 ANALITIC <- read.csv(paste0(baseurl, "data/ANALITIC_2.csv"), sep = ",", header = TRUE)
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
-importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", header = TRUE)
+importance <- read.csv(paste0(baseurl, "data/importanciaRM2.csv"), sep = ",", header = TRUE)
 
 # ------------------- Análisis previo -------------------
 print('------------------- Análisis previo -------------------')
@@ -80,7 +81,9 @@ g <- ggplot(significancia, aes(x = reorder(variable, total_no_significativa), y 
   theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
 print(g)
-ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Fila_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
+ggsave(paste0(baseurl, "Graficas/Cleaning/‘INTERCEPT’ es el valor esperado de la variable dependiente cuando todas las covariables son iguales a cero.
+En modelo de supervivencia es la parte de la función de riesgo que no se explica por las covariables.
+la_Significancia.png"), plot = g, width = 10, height = 12, dpi = 300)
 
 # EN HEATMAP
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
@@ -133,7 +136,9 @@ ggsave(paste0(baseurl, "Graficas/Cleaning/Desviacion_Estandar_Significancia.png"
 print('------------------- Importancia RF -------------------')
 
 # EN HEATMAP
-importance <- read.csv(paste0(baseurl, "data/importancia.csv"), sep = ",", header = TRUE)
+importance <- read.csv(paste0(baseurl, "data/importanciaRM2.csv"), sep = ",", header = TRUE)
+# importance <- importance %>%
+#   filter(Variable != "edad_inicio")
 # Convertir los datos a formato largo
 long_data <- pivot_longer(importance,
                           cols = -Variable,
@@ -211,11 +216,13 @@ ANALITIC_filt <- ANALITIC %>%
 significancia <- significancia %>%
   select(-c(count_tr_FGE, count_tr_FLL, count_tr_hm_FGE, count_tr_hm_FLL))
 
-# Calcular la media de no significancias
-significancia$Media <- rowMeans(significancia[ , -which(names(significancia) == "variable")], na.rm = TRUE)
+# Calcular la mediana de no significancias
+#significancia$Media <- rowMeans(significancia[ , -which(names(significancia) == "variable")], na.rm = TRUE)
+significancia$Media <- apply(significancia[ , -which(names(significancia) == "variable")], 1, median, na.rm = TRUE)
 
 # Encontrar nombres de columnas cuya media de no significancias sea 5 o mayor
 columns_to_remove <- significancia$variable[significancia$Media >= 5]
+columns_to_remove <- setdiff(columns_to_remove, c("renta2021", "ITIPSEXO")) #Excepciones interesantes a mantener. ¡OJO! ESTAS DOS SE ELIMINAN (DAN POCA SIGNIFICANCIA EN LAS VARIABLES)
 
 # Eliminar las columnas del DataFrame principal
 ANALITIC_clean <- ANALITIC_filt[ , !(names(ANALITIC_filt) %in% columns_to_remove)]
@@ -262,7 +269,7 @@ for (key in names(condiciones)) {
 
 # ------------------- Rellenado de Datos con MICE -------------------
 print('------------------- Rellenado de Datos con MICE -------------------')
-
+#
 # # CONFIGURACIÓN PARA PODER USAR VARIOS HILOS
 # # Detectar el número de núcleos lógicos
 # num_cores <- detectCores(logical = TRUE)
@@ -295,6 +302,9 @@ print('------------------- Rellenado de Datos con MICE -------------------')
 # write.csv(ANALITIC_5, paste0(baseurl, "Mice/ANALITIC_mice_5.csv"), row.names = FALSE)
 # write.csv(ANALITIC_6, paste0(baseurl, "Mice/ANALITIC_mice_6.csv"), row.names = FALSE)
 # write.csv(ANALITIC_7, paste0(baseurl, "Mice/ANALITIC_mice_7.csv"), row.names = FALSE)
+
+ANALITIC_clean <- ANALITIC_clean %>%
+  filter(!is.na(renta2021))
 
 write.csv(ANALITIC_clean, paste0(baseurl, "data/ANALITIC_clean.csv"), row.names = FALSE)
 

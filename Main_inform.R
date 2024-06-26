@@ -26,6 +26,9 @@ EXCEL <- read_excel(paste0(baseurl, "Grupo/analiticas_filtradas.xlsx"))
 
 INFORM <- read.csv(paste0(baseurl, "Datos_informe.csv"), sep = ";", header = TRUE)
 
+RENTA <- read.csv(paste0(baseurl, "renta_cp.csv"), sep = ";", header = TRUE)
+colnames(RENTA)[1] <-"renta2021"
+
 # ------------------- CORRECCIÓN DE NOMBRES -------------------
 print('------------------- CORRECCIÓN DE NOMBRES -------------------')
 
@@ -134,6 +137,7 @@ buscar_transplante <- function(fila) {
 # ------- EXCEL GRUPO -------
 
 INFORM$ID <- as.numeric(as.character(INFORM$ID))
+INFORM$CodigoPostalResidencia <- as.numeric(as.character(INFORM$CodigoPostalResidencia))
 EXCEL$ID <- as.numeric(as.character(EXCEL$ID))
 
 mapeo_transplante <- EXCEL %>%
@@ -228,6 +232,25 @@ for (key in names(condiciones)) {
   ggsave(paste0(baseurl, "Graficas/Cleaning/", key, ".png"), plot = g, width = 18, height = 12, dpi = 300)
 }
 
+# ------------------- RENTA -------------------
+print('------------------- RENTA -------------------')
+
+cp_unica <- INFORM %>%
+  group_by(ID) %>%
+  summarize(CodigoPostalResidencia = first(CodigoPostalResidencia))
+# genero <- INFORM %>%
+#   group_by(ID) %>%
+#   summarize(ITIPSEXO = first(ITIPSEXO))
+# genero$ITIPSEXO <- ifelse(genero$ITIPSEXO == "H", 0, 1) # 0 si es HOMBRE y 1 si es MUJER
+
+ANALITIC <- ANALITIC %>%
+  left_join(cp_unica, by = "ID")
+
+ANALITIC <- ANALITIC %>%
+  left_join(RENTA, by = "CodigoPostalResidencia")
+
+ANALITIC <- ANALITIC %>%
+  select(-c(CodigoPostalResidencia))
 
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')
