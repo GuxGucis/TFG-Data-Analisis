@@ -51,6 +51,8 @@ df_datos <- ANALITIC %>%
 
 ANALITIC <- ANALITIC %>%
   relocate("FGE", .after = "ITIPSEXO")
+ANALITIC <- ANALITIC %>%
+  relocate("FGE2", .after = "FGE")
 
 # Inicializar una lista para almacenar los resultados de cada columna
 resultados <- list()
@@ -91,6 +93,8 @@ df_cox <- left_join(df_datos, df_resultados, by = "ID") #Las columnas de resulta
 # REORDENAR PORQUE TOC (muevo FGE y cociente mas adelante)
 df_cox <- df_cox %>%
   relocate("FGE", .after = "edad_inicio")
+df_cox <- df_cox %>%
+  relocate("FGE2", .after = "FGE")
 
 # Columna Estado para crear los grupos de tratamientos importantes que han tenido
 df_cox <- df_cox %>%
@@ -128,7 +132,7 @@ print('------------------- MODELO DE COX GENERAL -------------------')
 # ------------------------------------------------------------------
 
 # Preparar la fórmula del modelo de Cox incluyendo todas las columnas desde la 6ª en adelante como covariables
-covariables <- names(df_cox)[6:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
+covariables <- names(df_cox)[7:ncol(df_cox)] # Asume que las columnas de interés empiezan en la 6ª posición
 
 # Imputar valores faltantes para las covariables numéricas con la media de cada columna
 # Asume que 'edad_inicio' y todas las covariables desde la 5ª columna hacia adelante son numéricas
@@ -138,6 +142,12 @@ df_cox_fill <- df_cox %>%
 df_cox_fill$Estado <- as.factor(df_cox_fill$Estado)
 formula_cox_FGE <- as.formula(paste("Surv(tiempo_total, FGE) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
 formula_cox_FLL <- as.formula(paste("Surv(tiempo_total, Fallecido) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
+formula_cox_FGE2 <- as.formula(paste("Surv(tiempo_total, FGE2) ~ strata(Estado) + ", paste(covariables, collapse = " + ")))
+
+# ------------------------------------------------------------------
+# ---------------------- MODELO DE COX -----------------------------
+# ------------------------ (sobre FGE) ------------------------------
+# ------------------------------------------------------------------
 
 # Ajustar el modelo de Cox
 modelo_cox_FGE <- coxph(formula_cox_FGE, data = df_cox_fill)
@@ -637,6 +647,247 @@ ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_NN_harz.png"), plot = g, width = 1
 g <- g + ylim(c(-3, 3))
 print(g)
 ggsave(paste0(baseurl, "Graficas/Cox1/COX_FLL_NN_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------------------------------------------------------
+# ---------------------- MODELO DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ---------------------------
+# ------------------------------------------------------------------
+
+# Ajustar el modelo de Cox
+modelo_cox_FGE2 <- coxph(formula_cox_FGE2, data = df_cox_fill)
+
+# -------------------------------------------------------------------
+# ---------------------- GRAFICAS DE COX ----------------------------
+# --------------------- (sobre FGE EKFC) ---------------------------
+# -------------------------------------------------------------------
+
+# ------------------------ HAZARD RATIO -----------------------------
+
+# Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
+coeficientes_cox <- broom::tidy(modelo_cox_FGE2, conf.int = TRUE, conf.level = 0.95)
+
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
+
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) con TODOS LOS PACIENTES") +
+  theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_ALL_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
+g <- g + ylim(c(-3, 3))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_ALL_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------- CURVAS DE SUPERVIVENCIA -----------------------
+
+# Calcular las curvas de supervivencia ajustadas por Estado
+surv_ajustado_FGE2 <- survfit(modelo_cox_FGE2)
+
+# P-VALOR
+logrank_test <- survdiff(Surv(tiempo_total, FGE2) ~ Estado, data = df_cox_fill)
+p_valor_logrank <- pchisq(logrank_test$chisq, length(logrank_test$n) - 1, lower.tail = FALSE)
+print(paste0('P-Valor sobre FGE2: ', p_valor_logrank))
+
+# Gráfico de las curvas ajustadas por Estado
+g <- ggsurvplot(surv_ajustado_FGE2, data = df_cox_fill,
+                pval = FALSE, conf.int = TRUE,
+                xlab = "Tiempo",
+                ylab = "Probabilidad de Supervivencia",
+                title = "Curvas de Supervivencia Ajustadas por Estado sobre FGE (EKFC)",
+                ggtheme = theme_minimal() +
+                  theme(plot.background = element_rect(fill = "white", colour = "black"),
+                        panel.background = element_rect(fill = "white", colour = "black"),
+                        legend.background = element_rect(fill = "white", colour = "black"))
+)
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_ALL_curv.png"), plot = g$plot, width = 18, height = 9, dpi = 300)
+
+# =============== DIVIDIMOS DATAFRAMES =====================
+# ------------------- EN HEMODIALISIS -------------------
+print('------------------- EN HEMODIALISIS -------------------')
+
+df_cox_hm <- df_cox %>%
+  filter(Estado == 'hemodialisis')
+
+# ---------------------- MODELO DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ---------------------------
+
+covariables <- names(df_cox_hm)[6:ncol(df_cox_hm)]
+
+df_cox_hm_fill <- df_cox_hm %>%
+  mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+modelo_cox_hm_FGE2 <- coxph(formula_cox_FGE2, data = df_cox_hm_fill)
+
+# ---------------------- GRAFICA DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ----------------------------
+
+# ------------------------ HAZARD RATIO -----------------------------
+
+# Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
+coeficientes_cox <- broom::tidy(modelo_cox_hm_FGE2, conf.int = TRUE, conf.level = 0.95)
+
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
+
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) CON HEMODIALISIS") +
+  theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_HM_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
+g <- g + ylim(c(-3, 3))
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_HM_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------- CON TRANSPLANTE -------------------
+print('------------------- CON TRANSPLANTE -------------------')
+
+df_cox_tr <- df_cox %>%
+  filter(Estado == 'transplante')
+
+# ---------------------- MODELO DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ---------------------------
+
+covariables <- names(df_cox_tr)[6:ncol(df_cox_tr)]
+
+df_cox_tr_fill <- df_cox_tr %>%
+  mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+modelo_cox_tr_FGE2 <- coxph(formula_cox_FGE2, data = df_cox_tr_fill)
+
+# ---------------------- GRAFICA DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ----------------------------
+
+# ------------------------ HAZARD RATIO -----------------------------
+
+# Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
+coeficientes_cox <- broom::tidy(modelo_cox_tr_FGE2, conf.int = TRUE, conf.level = 0.95)
+
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
+
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) CON TRANSPLANTE") +
+  theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_TR_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
+g <- g + ylim(c(-1000, 1000))
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_TR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------- HEMODIALISIS Y TRANSPLANTE -------------------
+print('------------------- HEMODIALISIS Y TRANSPLANTE -------------------')
+
+df_cox_tr_hm <- df_cox %>%
+  filter(Estado == 'ambas')
+
+# ---------------------- MODELO DE COX -----------------------------
+# ------------------- (sobre FGE EKFC) -----------------------------
+
+covariables <- names(df_cox_tr_hm)[6:ncol(df_cox_tr_hm)]
+
+df_cox_tr_hm_fill <- df_cox_tr_hm %>%
+  mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+modelo_cox_tr_hm_FGE2 <- coxph(formula_cox_FGE2, data = df_cox_tr_hm_fill)
+
+# ---------------------- GRAFICA DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ----------------------------
+
+# ------------------------ HAZARD RATIO -----------------------------
+
+# Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
+coeficientes_cox <- broom::tidy(modelo_cox_tr_hm_FGE2, conf.int = TRUE, conf.level = 0.95)
+
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
+
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) CON HEMODIALISIS Y TRANSPLANTE") +
+  theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_HMTR_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# Controlamos los límites del radio para que se aprencien los de menor radio pero que tienen menos incertidumbre
+g <- g + ylim(c(-1000, 1000))
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_HMTR_harz_Sca.png"), plot = g, width = 14, height = 10, dpi = 300)
+
+# ------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------
+print('------------------- NI HEMODIALISIS NI TRANSPLANTE -------------------')
+
+df_cox_NN <- df_cox %>%
+  filter(Estado == 'nada')
+
+# ---------------------- MODELO DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ---------------------------
+
+covariables <- names(df_cox_NN)[6:ncol(df_cox_NN)]
+
+df_cox_NN_fill <- df_cox_NN %>%
+  mutate(across(.cols = c(edad_inicio, all_of(covariables)), ~ ifelse(is.na(.), mean(., na.rm = TRUE), .)))
+
+modelo_cox_NN_FGE2 <- coxph(formula_cox_FGE2, data = df_cox_NN_fill)
+
+# ---------------------- GRAFICA DE COX -----------------------------
+# --------------------- (sobre FGE EKFC) ----------------------------
+
+# ------------------------ HAZARD RATIO -----------------------------
+
+# Convertir el resumen del modelo de Cox en un dataframe incluyendo los intervalos de confianza
+coeficientes_cox <- broom::tidy(modelo_cox_NN_FGE2, conf.int = TRUE, conf.level = 0.95)
+
+# Añadir una nueva columna al dataframe para la significancia basada en el p-valor
+coeficientes_cox$significancia <- ifelse(coeficientes_cox$p.value < 0.05, "Significativo", "No significativo")
+
+# Crear el gráfico de hazard ratios con ggplot2, diferenciando por significancia
+g <- ggplot(coeficientes_cox, aes(x = term, y = estimate)) +
+  geom_point(aes(color = significancia), size = 3) +
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
+  scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
+  coord_flip() +
+  labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) SIN HEMODIALISIS Y TRANSPLANTE") +
+  theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
+
+print(g)
+ggsave(paste0(baseurl, "Graficas/Cox1/COX_FGE2_NN_harz.png"), plot = g, width = 14, height = 10, dpi = 300)
 
 # ------------------- EXPORTAR -------------------
 print('------------------- EXPORTAR -------------------')

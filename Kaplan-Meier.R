@@ -56,6 +56,13 @@ modelo_km_FGE <- survfit(Surv(tiempo_total, FGE) ~ Estado, data = df_km)
 
 modelo_km_Fallecido <- survfit(Surv(tiempo_total, Fallecido) ~ Estado, data = df_km)
 
+# ------------------------------------------------------------------
+# ------------------- MODELO KAPLAN-MEIER --------------------------
+# -------------------- (sobre FGE EKFC) ----------------------------
+# ------------------------------------------------------------------
+
+modelo_km_FGE2 <- survfit(Surv(tiempo_total, FGE2) ~ Estado, data = df_km)
+
 print('------------------- GRAFICA KAPLAN-MEIER -------------------')
 # -------------------------------------------------------------------
 # ------------------- GRAFICA KAPLAN-MEIER --------------------------
@@ -100,3 +107,25 @@ g <- ggsurvplot(modelo_km_Fallecido, data = df_km,
 
 print(g)
 # ggsave(paste0(baseurl, "Graficas/KM/KM_FLL.png"), plot = g, width = 18, height = 9, dpi = 300)
+
+# -------------------------------------------------------------------
+# ------------------- GRAFICA KAPLAN-MEIER --------------------------
+# ------------------------ (sobre FGE EKFC) ------------------------------
+# -------------------------------------------------------------------
+
+# Graficar el modelo de Kaplan-Meier con ggsurvplot
+g <- ggsurvplot(modelo_km_FGE2, data = df_km,
+                xlab = "Tiempo",
+                ylab = "Probabilidad de Supervivencia",
+                title = "Curva de Kaplan-Meier por Estado sobre FGE con EKFC",
+                palette = c("#E7B800","#2E9FDF", "#3ADF2E", "#DE2EDF"), # Puedes cambiar los colores según prefieras
+                pval = TRUE, # Muestra el p-valor del test de log-rank
+                risk.table = TRUE, # Añade una tabla de personas en riesgo por tiempo
+                ggtheme = theme_minimal() +
+                  theme(plot.background = element_rect(fill = "white", colour = "black"),
+                        panel.background = element_rect(fill = "white", colour = "black"),
+                        legend.background = element_rect(fill = "white", colour = "black"))
+)
+
+print(g)
+# ggsave(paste0(baseurl, "Graficas/KM/KM_FGE2.png"), plot = g, width = 18, height = 9, dpi = 300)

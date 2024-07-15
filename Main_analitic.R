@@ -161,8 +161,8 @@ print('------------------- Rellenado de Datos con MICE -------------------')
 # df_analitic_4 <- complete(mice_analitics, 4)
 # df_analitic_5 <- complete(mice_analitics, 5)
 
-# ------------------- Filtrado glomerular estimado -------------------
-print('------------------- Filtrado glomerular estimado -------------------')
+# ------------------- Filtrado glomerular estimado CKD-EPI2009 -------------------
+print('------------------- Filtrado glomerular estimado CKD-EPI2009 -------------------')
 
 # Crear una nueva columna "FGE" con valores predeterminados
 ANALITIC$FGE <- 0
@@ -184,6 +184,86 @@ ANALITIC$FGE <- ifelse(ANALITIC$ITIPSEXO == "H",
 NullFGE <- sum(is.na(ANALITIC$FGE))
 ZeroFGE <- sum(ANALITIC$FGE == 0)
 print(paste("Valores nulos de FGE: ", NullFGE, " Cantidad de valores a 0 en FGE: ", ZeroFGE))
+
+# ------------------- Filtrado glomerular estimado EKFC -------------------
+print('------------------- Filtrado glomerular estimado EKFC -------------------')
+
+# Definir la función para calcular Q según la edad y el sexo
+calc_Q <- function(age, sex) {
+  if (sex == "H") {
+    if (age <= 25) {
+      Q_value <- exp(3.200 + 0.259 * age - 0.543 * log(age) - 0.00763 * age^2 + 0.0000790 * age^3)
+      print(paste("Q value for male age <= 25:", Q_value))
+      return(Q_value)
+    } else {
+      print("Q value for male age > 25: 80")
+      return(80)
+    }
+  } else if (sex == "M") {
+    if (age <= 25) {
+      Q_value <- exp(3.080 + 0.177 * age - 0.223 * log(age) - 0.00596 * age^2 + 0.0000686 * age^3)
+      print(paste("Q value for female age <= 25:", Q_value))
+      return(Q_value)
+    } else {
+      print("Q value for female age > 25: 62")
+      return(62)
+    }
+  } else {
+    return(NA)
+  }
+}
+
+# Convertir los valores de creatinina a numérico, con manejo de valores NA
+ANALITIC$Creatinina <- as.numeric(ANALITIC$Creatinina)
+
+# Crear una columna para Q y calcularla
+ANALITIC$Q <- mapply(function(age, sex) {
+  Q_val <- calc_Q(age, sex)
+  print(paste("Calculated Q for age", age, "and sex", sex, ":", Q_val))
+  # Convertir Q de µmol/L a mg/dl
+  Q_val <- Q_val / 88.4
+  return(Q_val)
+}, ANALITIC$Edad, ANALITIC$ITIPSEXO)
+
+# Definir la función para calcular FGE según las nuevas ecuaciones del EKFC
+calc_FGE <- function(SCr, Q, age) {
+  if (is.na(SCr) || is.na(Q) || is.na(age)) {
+    return(NA)
+  }
+  SCr_Q_ratio <- SCr / Q
+  print(paste("SCr:", SCr, "Q:", Q, "SCr/Q ratio:", SCr_Q_ratio))
+
+  if (age <= 40) {
+    if (SCr_Q_ratio < 1) {
+      eGFR <- 107.3 * (SCr_Q_ratio)^(-0.322)
+      print(paste("eGFR for age <= 40 and SCr/Q < 1:", eGFR))
+      return(eGFR)
+    } else {
+      eGFR <- 107.3 * (SCr_Q_ratio)^(-1.132)
+      print(paste("eGFR for age <= 40 and SCr/Q >= 1:", eGFR))
+      return(eGFR)
+    }
+  } else {
+    if (SCr_Q_ratio < 1) {
+      eGFR <- 107.3 * (SCr_Q_ratio)^(-0.322) * 0.990^(age - 40)
+      print(paste("eGFR for age > 40 and SCr/Q < 1:", eGFR))
+      return(eGFR)
+    } else {
+      eGFR <- 107.3 * (SCr_Q_ratio)^(-1.132) * 0.990^(age - 40)
+      print(paste("eGFR for age > 40 and SCr/Q >= 1:", eGFR))
+      return(eGFR)
+    }
+  }
+}
+
+# Calcular FGE usando la función definida
+ANALITIC$FGE2 <- mapply(function(SCr, Q, age) {
+  eGFR <- calc_FGE(SCr, Q, age)
+  print(paste("Calculated eGFR for SCr", SCr, "Q", Q, "age", age, ":", eGFR))
+  return(eGFR)
+}, ANALITIC$Creatinina, ANALITIC$Q, ANALITIC$Edad)
+
+ANALITIC$Q <- NULL
 
 # ------------------- Cociente albuminuria/creatinina en orina -------------------
 print('------------------- Cociente albuminuria/creatinina en orina -------------------')
@@ -219,7 +299,7 @@ print(paste("Número de filas que tiene tanto el FGE como el Cociente nulos: ", 
 print(paste("Tamaño de filas original de Analitics: ", nrow(ANALITIC)))
 
 ANALITIC <- ANALITIC %>%
-  filter(!(is.na(ANALITIC$Cociente.Album.Creat) & is.na(ANALITIC$FGE)))
+  filter(!(is.na(ANALITIC$Cociente.Album.Creat) & is.na(ANALITIC$FGE) & is.na(ANALITIC$FGE2)))
 
 print(paste("Tamaño tras el filtrado: ", nrow(ANALITIC)))
 

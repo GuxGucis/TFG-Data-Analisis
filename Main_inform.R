@@ -184,7 +184,9 @@ ANALITIC <- ANALITIC %>%
 ANALITIC <- ANALITIC %>%
   relocate("FGE", .after = "ID")
 ANALITIC <- ANALITIC %>%
-  relocate("Hemodialisis", .after = "FGE")
+  relocate("FGE2", .after = "FGE")
+ANALITIC <- ANALITIC %>%
+  relocate("Hemodialisis", .after = "FGE2")
 ANALITIC <- ANALITIC %>%
   relocate("Transplante", .after = "Hemodialisis")
 ANALITIC <- ANALITIC %>%
