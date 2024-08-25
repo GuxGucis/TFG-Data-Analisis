@@ -87,6 +87,7 @@ ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Fila_Significancia.png"), plot = 
 
 # EN HEATMAP
 significancia <- read.csv(paste0(baseurl, "data/significancia.csv"), sep = ",", header = TRUE)
+significancia <- significancia[!(significancia$variable == 'Fallecido'),]
 # Convertir los datos a formato largo
 long_data <- pivot_longer(significancia,
                           cols = -variable,
@@ -174,6 +175,7 @@ ggsave(paste0(baseurl, "Graficas/Cleaning/Freq_Fila_Significancia2.png"), plot =
 
 # EN HEATMAP
 significancia2 <- read.csv(paste0(baseurl, "data/significancia2.csv"), sep = ",", header = TRUE)
+significancia2 <- significancia2[!(significancia2$variable == 'Fallecido'),]
 # Convertir los datos a formato largo
 long_data <- pivot_longer(significancia2,
                           cols = -variable,
@@ -256,7 +258,7 @@ ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, w
 # # ------------------- Importancia RF EKFC-------------------
 # print('------------------- Importancia RF EKFC-------------------')
 #
-# # EN HEATMAP
+# EN HEATMAP
 # importance2 <- read.csv(paste0(baseurl, "data/importancia2RM2.csv"), sep = ",", header = TRUE)
 #
 # long_data <- pivot_longer(importance2,
@@ -265,7 +267,7 @@ ggsave(paste0(baseurl, "Graficas/Cleaning/HeatMap_Importancia.png"), plot = g, w
 #                           values_to = 'importancia')
 #
 # # Crear el heatmap
-# g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importancia2)) +
+# g <- ggplot(long_data, aes(x = modelo, y = Variable, fill = importance2)) +
 #   geom_tile() +
 #   scale_fill_viridis_c(option = "D") +
 #   theme_minimal() +

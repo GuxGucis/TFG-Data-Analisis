@@ -204,7 +204,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE con TODOS LOS PACIENTES") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE con TODOS LOS PACIENTES") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -266,7 +266,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecimiento con TODOS LOS PACIENTES") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecimiento con TODOS LOS PACIENTES") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -328,7 +328,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) con TODOS LOS PACIENTES") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) con TODOS LOS PACIENTES") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -413,7 +413,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE CON HEMODIALISIS") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE CON HEMODIALISIS") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -446,7 +446,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecido CON HEMODIALISIS") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecido CON HEMODIALISIS") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -474,7 +474,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) CON HEMODIALISIS") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) CON HEMODIALISIS") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -532,7 +532,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE SIN HEMODIALISIS Y TRANSPLANTE") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE SIN HEMODIALISIS Y TRANSPLANTE") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -560,7 +560,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecido SIN HEMODIALISIS Y TRANSPLANTE") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre Fallecido SIN HEMODIALISIS Y TRANSPLANTE") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 
@@ -593,7 +593,7 @@ for (i in mice){
     geom_errorbar(aes(ymin = conf.low, ymax = conf.high, color = significancia), width = 0.2) +
     scale_color_manual(values = c("Significativo" = "blue", "No significativo" = "red")) +
     coord_flip() +
-    labs(x = "Covariables", y = "Hazard Ratio", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) SIN HEMODIALISIS Y TRANSPLANTE") +
+    labs(x = "Covariables", y = "Hazard Ratio (log(HR))", title = "Efecto de las Covariables en el Riesgo Relativo sobre FGE (EKFC) SIN HEMODIALISIS Y TRANSPLANTE") +
     theme_minimal() +
     theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black"))
 

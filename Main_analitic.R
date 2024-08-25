@@ -83,16 +83,18 @@ DF_nulos <- data.frame(
 )
 
 # Filtra para incluir solo columnas con nulos
-DF_nulos <- DF_nulos[DF_nulos$Porcentaje > 0, ]
+# DF_nulos <- DF_nulos[DF_nulos$Porcentaje > 0, ]
 
 # Gráfico de barras para el porcentaje de valores nulos
 grafico_barras <- ggplot(DF_nulos, aes(x = reorder(Columna, Porcentaje), y = Porcentaje)) +
   geom_bar(stat = "identity", fill = "blue", alpha = 0.7) +
   labs(title = "Porcentaje de Valores Nulos por Columna", x = "", y = "Porcentaje") +
   theme_minimal() +
+  theme(legend.position = "right", panel.background = element_rect(fill = "white", colour = "black"), plot.background = element_rect(fill = "white", colour = "black")) +
   coord_flip() # Voltea el gráfico para mejor visualización de los nombres de las columnas
 
 print(grafico_barras)
+ggsave(paste0(baseurl, "Graficas/Cleaning/Porcentaje_nulos_inicio.png"), plot = grafico_barras, width = 12, height = 13, dpi = 300)
 
 print('------- quitar >= 90% nulos -------')
 # Antes de la eliminación, imprimir el número de columnas

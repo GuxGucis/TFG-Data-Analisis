@@ -125,13 +125,13 @@ for i in mice:
     print(ctv.summary)
 
     # Graficar la Significancia de las variables
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(17, 10))
     ctv.plot()
-    plt.title('Significancia de las Variables en el Modelo Multiestado General')
+    plt.title('Importancia de las Variables en el Modelo Multiestado General')
     plt.xlabel('Coeficiente')
     plt.ylabel('Variable')
     plt.grid(True)
-    plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_significancia_variables_modelo_general_' + str(i) + '.png')
+    plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS_importancia_variables_modelo_general_' + str(i) + '.png')
     plt.close()
 
     # CURVAS DE SUPERVIVENCIA POR HEMODIALISIS
@@ -169,6 +169,46 @@ for i in mice:
     plt.close()
 
     # CURVAS DE SUPERVIVENCIA POR GRUPOS DE EDAD
+
+    # bins = [0, 30, 50, 70, 100]
+    # df['age_group'] = pd.cut(df['Edad'], bins=bins, labels=[1, 2, 3, 4], right=False)  # Usamos valores numéricos 1, 2, 3, 4
+    #
+    # # Ajustar y graficar las probabilidades de transición entre estados para cada grupo de edad
+    # for age_group in [1, 2, 3, 4]:
+    #     grupo_edad = df[df['age_group'] == age_group]
+    #
+    #     # Verificar que el grupo de edad no esté vacío
+    #     if grupo_edad.empty:
+    #         print(f"No hay datos para el grupo de edad {age_group}. Saltando...")
+    #         continue
+    #
+    #     # Verificar que haya transiciones de estado en este grupo
+    #     if grupo_edad['estado_siguiente'].nunique() < 2:
+    #         print(f"No hay suficientes transiciones para el grupo de edad {age_group}. Saltando...")
+    #         continue
+    #
+    #     # Ajustar modelo multiestado por grupo de edad
+    #     try:
+    #         ctv = CoxTimeVaryingFitter()
+    #         ctv.fit(grupo_edad, id_col='ID', event_col='estado_siguiente', start_col='start', stop_col='stop', show_progress=True)
+    #     except Exception as e:
+    #         print(f"Error ajustando el modelo para el grupo de edad {age_group}: {e}")
+    #         continue
+    #
+    #     # Graficar probabilidades de transición entre estados
+    #     plt.figure(figsize=(10, 6))
+    #     for state in sorted(grupo_edad['estado_siguiente'].unique()):
+    #         kmf = KaplanMeierFitter()
+    #         kmf.fit(durations=grupo_edad['stop'], event_observed=(grupo_edad['estado_siguiente'] == state), entry=grupo_edad['start'])
+    #         kmf.plot_survival_function(ci_show=False, label=f'Estado {state}')
+    #
+    #     plt.title(f'Probabilidades de Transición por Grupo de Edad {age_group}')
+    #     plt.xlabel('Tiempo')
+    #     plt.ylabel('Probabilidad')
+    #     plt.legend(title='Estado')
+    #     plt.grid(True)
+    #     plt.savefig(baseurl + f'Graficas/python/MultiEstado/MS_Surv_transiciones_edad_{age_group}_' + str(i) + '.png')
+    #     plt.close()
 
     # Definir los grupos de edad
     bins = [0, 30, 50, 70, 100]
@@ -299,13 +339,13 @@ for i in mice:
     print(ctv.summary)
 
     # Graficar la Significancia de las variables
-    plt.figure(figsize=(12, 10))
+    plt.figure(figsize=(17, 10))
     ctv.plot()
-    plt.title('Significancia de las Variables en el Modelo Multiestado General (EKFC)')
+    plt.title('Importancia de las Variables en el Modelo Multiestado General (EKFC)')
     plt.xlabel('Coeficiente')
     plt.ylabel('Variable')
     plt.grid(True)
-    plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS2_significancia_variables_modelo_general_' + str(i) + '.png')
+    plt.savefig(baseurl + 'Graficas/python/MultiEstado/MS2_importancia_variables_modelo_general_' + str(i) + '.png')
     plt.close()
 
     # CURVAS DE SUPERVIVENCIA POR HEMODIALISIS
